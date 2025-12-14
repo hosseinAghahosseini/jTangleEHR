@@ -781,6 +781,170 @@ public class Command {
                     outputPrintLine("Error happened at initializeTangle(). 4 Paramentes should be provided.");
                 }
             }
+            else if(commandStrOriginal.contains("listUser("))
+            {
+                commandStr = Command.sanitize(commandStr, "listUser");
+                String Output = "\"List Users\":[";
+                if(commandStr.length() > 0)
+                {
+                    try
+                    {
+                        var command = commandStr.split(",");
+                        if(command.length == 1) 
+                        {
+                            int limit = Integer.parseInt(command[0]);
+                            if(limit >= StaticVariables.Users.size()) limit = StaticVariables.Users.size();
+                            for(int i = 0; i < limit; i++)
+                            {
+                                Output += "{\"" + StaticVariables.Users.get(i).shortUserId + ", " + StaticVariables.Users.get(i).Role.toString() + "\"}\n";
+                                if(i != limit - 1)
+                                {
+                                    Output += ", ";
+                                }
+                            }                           
+                        }
+                        else if (command.length == 2)
+                        {
+                            int limit = Integer.parseInt(command[0]);
+                            
+                            if(command[1].toLowerCase().equals("false"))
+                            {
+                                limit = StaticVariables.Users.size() - limit;
+                                if(limit < 0) limit = 0;
+
+                                for(int i = StaticVariables.Users.size() - 1; i >= limit; i--)
+                                {
+                                    Output += "{\"" + StaticVariables.Users.get(i).shortUserId + ", " + StaticVariables.Users.get(i).Role.toString() + "\"}\n";
+                                    if(i != limit)
+                                    {
+                                        Output += ", ";
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if(limit >= StaticVariables.Users.size()) limit = StaticVariables.Users.size();
+                                for(int i = 0; i < limit; i++)
+                                {
+                                    Output += "{\"" + StaticVariables.Users.get(i).shortUserId + ", " + StaticVariables.Users.get(i).Role.toString() + "\"}\n";
+                                    if(i != limit - 1)
+                                    {
+                                        Output += ", ";
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            outputPrintLine("An Error happened at ListUser(). Wrong number of parameters were provided");
+                            return;
+                        }
+                    }
+                    catch (Exception e) 
+                    {
+                        outputPrintLine("An Error happened at ListUser(). Can't convert limit to an integer");
+                        return;
+                    }
+                }
+                else
+                {
+                    for(int i = 0; i < StaticVariables.Users.size(); i++)
+                    {
+                        if(i != 0)
+                        {
+                            Output += ", \"" + StaticVariables.Users.get(i).shortUserId + "\"";
+                        }
+                        else
+                        {
+                            Output += "\"" + StaticVariables.Users.get(i).shortUserId + "\"";
+                        }
+                    }   
+                }
+                Output += "]";
+                outputPrintLine(Output);
+            }
+            else if(commandStrOriginal.contains("listNode("))
+            {
+                commandStr = Command.sanitize(commandStr, "listNode");
+                String Output = "\"List Nodes\":[";
+                if(commandStr.length() > 0)
+                {
+                    try
+                    {
+                        var command = commandStr.split(",");
+                        if(command.length == 1) 
+                        {
+                            int limit = Integer.parseInt(command[0]);
+                            if(limit >= StaticVariables.Nodes.size()) limit = StaticVariables.Nodes.size();
+                            for(int i = 0; i < limit; i++)
+                            {
+                                Output += "\"" + StaticVariables.Nodes.get(i).shortNodeId + "\"";
+                                if(i != limit - 1)
+                                {
+                                    Output += ", ";
+                                }
+                            }                           
+                        }
+                        else if (command.length == 2)
+                        {
+                            int limit = Integer.parseInt(command[0]);
+                            
+                            if(command[1].toLowerCase().equals("false"))
+                            {
+                                limit = StaticVariables.Users.size() - limit;
+                                if(limit < 0) limit = 0;
+
+                                for(int i = StaticVariables.Nodes.size() - 1; i >= limit; i--)
+                                {
+                                    Output += "\"" + StaticVariables.Nodes.get(i).shortNodeId + "\"";
+                                    if(i != limit)
+                                    {
+                                        Output += ", ";
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if(limit >= StaticVariables.Nodes.size()) limit = StaticVariables.Nodes.size();
+                                for(int i = 0; i < limit; i++)
+                                {
+                                    Output += "\"" + StaticVariables.Nodes.get(i).shortNodeId + "\"";
+                                    if(i != limit - 1)
+                                    {
+                                        Output += ", ";
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            outputPrintLine("An Error happened at ListUser(). Wrong number of parameters were provided");
+                            return;
+                        }
+                    }
+                    catch (Exception e) 
+                    {
+                        outputPrintLine("An Error happened at ListUser(). Can't convert limit to an integer");
+                        return;
+                    }
+                }
+                else
+                {
+                    for(int i = 0; i < StaticVariables.Nodes.size(); i++)
+                    {
+                        if(i != 0)
+                        {
+                            Output += ", \"" + StaticVariables.Nodes.get(i).shortNodeId + "\"";
+                        }
+                        else
+                        {
+                            Output += "\"" + StaticVariables.Nodes.get(i).shortNodeId + "\"";
+                        }
+                    }   
+                }
+                Output += "]";
+                outputPrintLine(Output);
+            }
         }
     }   
 }

@@ -72,6 +72,9 @@ public class IDE extends javax.swing.JFrame {
         jMenuItem6 = new javax.swing.JMenuItem();
         jMenuItem9 = new javax.swing.JMenuItem();
         jMenuItem13 = new javax.swing.JMenuItem();
+        jMenu9 = new javax.swing.JMenu();
+        jMenuItem16 = new javax.swing.JMenuItem();
+        jMenuItem17 = new javax.swing.JMenuItem();
         jMenu6 = new javax.swing.JMenu();
         jMenu7 = new javax.swing.JMenu();
         jCheckBoxMenuItem1 = new javax.swing.JCheckBoxMenuItem();
@@ -290,6 +293,26 @@ public class IDE extends javax.swing.JFrame {
         });
         jMenu5.add(jMenuItem13);
 
+        jMenu9.setText("Variables");
+
+        jMenuItem16.setText("Users");
+        jMenuItem16.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem16ActionPerformed(evt);
+            }
+        });
+        jMenu9.add(jMenuItem16);
+
+        jMenuItem17.setText("Nodes");
+        jMenuItem17.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem17ActionPerformed(evt);
+            }
+        });
+        jMenu9.add(jMenuItem17);
+
+        jMenu5.add(jMenu9);
+
         jMenuBar1.add(jMenu5);
 
         jMenu6.setText("Settings");
@@ -384,7 +407,7 @@ public class IDE extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem3ActionPerformed
 
     private void jMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem4ActionPerformed
-        inputPrint("//Creates an EHR node for a user;\n//isEnryped should be true or false;\n//patientId, userId and hospitalId can be an empty string or null;\nnode = createEHR(\"user\", \"ehrText\", \"isEncrypted\", \"patientId\", \"doctorId\", \"hospitalId\");\n");
+        inputPrint("//Creates an EHR node for a user;\n//isEnryped should be true or false;\n//patientId, userId and hospitalId can be an empty string or null;\nnode = createEHR(\"user\", \"ehrText\", isEncrypted, \"patientId\", \"doctorId\", \"hospitalId\");\n");
     }//GEN-LAST:event_jMenuItem4ActionPerformed
 
     private void jMenuItem5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem5ActionPerformed
@@ -392,7 +415,7 @@ public class IDE extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem5ActionPerformed
 
     private void jMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem6ActionPerformed
-        inputPrint("//Shows a user's Tangle;\n//onlyShowMyEhr should be true or false\n//limit should be a positive integer, otherwise it will show all the EHR nodes of a tangle;\nprintTangle(\"user\", \"onlyShowMyEhr\", \"limit\");\n");
+        inputPrint("//Shows a user's Tangle;\n//onlyShowMyEhr should be true or false\n//limit should be a positive integer, otherwise it will show all the EHR nodes of a tangle;\nprintTangle(\"user\", onlyShowMyEhr, \"limit\");\n");
     }//GEN-LAST:event_jMenuItem6ActionPerformed
 
     private void jMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem7ActionPerformed
@@ -440,6 +463,14 @@ public class IDE extends javax.swing.JFrame {
     private void jMenuItem15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem15ActionPerformed
         inputPrint("//To write random data as command parameters, replace the parameter with this;\n//Random();\n");
     }//GEN-LAST:event_jMenuItem15ActionPerformed
+
+    private void jMenuItem16ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem16ActionPerformed
+        inputPrint("//Shows List of Users (limit is an optional field to show the number of users shown;\nlistUser(limit, isAscending);\n");
+    }//GEN-LAST:event_jMenuItem16ActionPerformed
+
+    private void jMenuItem17ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem17ActionPerformed
+        inputPrint("//Shows List of Nodes (limit is an optional field to show the number of nodes shown;\nlistNode(limit, isAscending);\n");
+    }//GEN-LAST:event_jMenuItem17ActionPerformed
 
     public void outputPrint(String Text)
     {
@@ -500,6 +531,7 @@ public class IDE extends javax.swing.JFrame {
     private javax.swing.JMenu jMenu6;
     private javax.swing.JMenu jMenu7;
     private javax.swing.JMenu jMenu8;
+    private javax.swing.JMenu jMenu9;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem10;
@@ -508,6 +540,8 @@ public class IDE extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem13;
     private javax.swing.JMenuItem jMenuItem14;
     private javax.swing.JMenuItem jMenuItem15;
+    private javax.swing.JMenuItem jMenuItem16;
+    private javax.swing.JMenuItem jMenuItem17;
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
