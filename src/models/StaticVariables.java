@@ -32,6 +32,19 @@ public class StaticVariables {
         return newUser;
     }
     
+    public static boolean doesUserExist(String UserId)
+    {
+        for(int i = Users.size() - 1; i >= 0; i-- )
+        {
+            if(Users.get(i).HashedPublicKey.equals(UserId) || Users.get(i).shortUserId.equals(UserId) )
+            {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     public static SimpleNode findNodeFromList(String NodeId)
     {
         SimpleNode newNode = null;
@@ -45,6 +58,18 @@ public class StaticVariables {
             }
         }
         return newNode;
+    }
+    
+    public static boolean doesNodeExist(String NodeId)
+    {
+        for(int i = Nodes.size() - 1; i >= 0; i-- )
+        {
+            if(Nodes.get(i).shortNodeId.equals(NodeId) || Nodes.get(i).NodeId.equals(NodeId))
+            {
+                return true;
+            }
+        }
+        return false;
     }
     
     public static String addNodeAndGetOutput(String NodeId, String NodeVar)

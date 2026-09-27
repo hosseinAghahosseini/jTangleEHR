@@ -25,8 +25,8 @@ import utils.JsonParser;
 
 public class Node {
     
-    public static String DELIMETER = ",";
-    public static String END_CHAR = ";";
+    public static final String DELIMETER = ",";
+    public static final String END_CHAR = ";";
     
     //mining difficulty
     public static int difficulty = 1;
@@ -71,14 +71,12 @@ public class Node {
     public String DigitalSignature;
     
     //Checking Varriables
-    int state = 0;
+    short state = 0;
+    short visited = 0;
     
-    public Node()
-    {
-        
-    }
+    public Node() { }
     
-    public Node(Node other, String decryptedEHR) 
+    public Node(Node other) 
     {
         if (other == null) {
             throw new IllegalArgumentException("Cannot create a Node from a null reference.");
@@ -107,8 +105,8 @@ public class Node {
         this.HospitalPreviousNodeId = other.HospitalPreviousNodeId;
         this.HospitalHashedPublicKey = other.HospitalHashedPublicKey;
 
-        //this.EHR = other.EHR;
-        this.EHR = decryptedEHR;
+        this.EHR = other.EHR;
+        //this.EHR = decryptedEHR;
         this.IsEhrEncrypted = other.IsEhrEncrypted;
         this.EHRAesKeyEncryptedByAssymeticKey = other.EHRAesKeyEncryptedByAssymeticKey;
         this.TransactionCreatorPublicKey = other.TransactionCreatorPublicKey;
@@ -120,7 +118,12 @@ public class Node {
         this.state = other.state;
     }
     
-    
+    public Node(Node other, String decryptedEHR) 
+    {
+        this(other);       
+        this.EHR = decryptedEHR;  
+    }
+
     //Node Creation
     public Node createNewNodeWithoutTipSelection(int OwnWeight,
             String EHR, String TransactionCreatorPublicKey,
@@ -165,6 +168,7 @@ public class Node {
             String TransactionCreatorPublicKey)
     {
         this.OwnWeight = OwnWeight; //todo calculate own weight
+        //this.CumulativeWeight = OwnWeight;
         this.EHR = EHR;
         this.IsEhrEncrypted = IsEhrEncrypted;
         if(IsEhrEncrypted)
@@ -245,6 +249,9 @@ public class Node {
         genesis.IsEhrEncrypted = false;
         genesis.EHRAesKeyEncryptedByAssymeticKey = "#";
         //genesis.TransactionCreatorPublicKey = "#";
+        
+        genesis.OwnWeight = 1;
+        genesis.CumulativeWeight = 1;
         
         AsymmetricEncryption rsa = new AsymmetricEncryption();
         rsa.generateKeyPair();   
@@ -403,13 +410,30 @@ public class Node {
                 +  "\",\"TransactionCreatorPublicKey\":\"" + TransactionCreatorPublicKey
                 +  "\",\"Nonce\":\"" + Nonce
                 +  "\",\"Hash\":\"" + Hash
-                +  "\",\"DigitalSignature\":\"" + DigitalSignature;      
+                +  "\",\"DigitalSignature\":\"" + DigitalSignature
+                +  "\",\"OwnWeight\":\"" + OwnWeight
+                +  "\",\"CumulativeWeight\":\"" + CumulativeWeight;      
         output += "\"}";
         
         return output;
     }
     
     public String toStringShort() {
+        return "{"
+            + "\"NodeId\":\"" + ShrinkString(NodeId) + "\", "
+            + "\"FirstNodeId\":\"" + ShrinkString(FirstAcceptedNodeId) + "\", "
+            + "\"SecondNodeId\":\"" + ShrinkString(SecondAcceptedNodeId) + "\", "
+            + "\"EHR\":\"" + EHR + "\", "
+            + "\"Encrypted\":" + IsEhrEncrypted + ", "
+            + "\"CreatorPublicKey\":\"" + ShrinkString(TransactionCreatorPublicKey) + "\", "
+            + "\"Hash\":\"" + ShrinkString(Hash) + "\", "
+            + "\"DigitalSign\":\"" + ShrinkString(DigitalSignature) + "\", "
+            + "\"OwnWeight\":\"" + OwnWeight + "\", "
+            + "\"CumulativeWeight\":\"" + CumulativeWeight + "\""
+            + "}";
+    }
+    
+    public String toStringShortFull() {
         return "{"
             + "\"NodeId\":\"" + NodeId + "\","
             + "\"FirstAcceptedNodeId\":\"" + FirstAcceptedNodeId + "\","
@@ -419,10 +443,20 @@ public class Node {
             + "\"TransactionCreatorPublicKey\":\"" + TransactionCreatorPublicKey + "\","
             + "\"Hash\":\"" + Hash + "\","
             + "\"DigitalSignature\":\"" + DigitalSignature + "\""
+            + "\"OwnWeight\":\"" + OwnWeight + "\","
+            + "\"CumulativeWeight\":\"" + CumulativeWeight + "\""
             + "}";
     }
+    
+    public static String ShrinkString(String s)
+    {
+        if(s == null) return null;
+        if(s.isBlank()) return s;
+        if(s.length() <= 3) return s;
+        return s.substring(0, 3) + "...";
+    }
 
-    // Converts ArrayList<YourNodeClass> to JSON array
+    // Converts ArrayList<Node> to JSON array
     public static String toJsonArray(java.util.List<Node> list) {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
@@ -435,7 +469,7 @@ public class Node {
         sb.append("]");
         return sb.toString();
     }
-    
+
     public boolean writeNodeToFile(Node node, String address)
     {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(address)))

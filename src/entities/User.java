@@ -70,7 +70,7 @@ public class User {
         this.FirstName = firstName;
         this.LastName = lastName;
         this.Address = address;
-        this.BirthDate = BirthDate;
+        this.BirthDate = birthDate;
     }
     
     public void createTangleForUser()
@@ -322,13 +322,53 @@ public class User {
             return false;
         }
         
+        //update cumulative weights
+        this.calculateCumulativeWeightsAfterAddingAGraph(NewlyAddedNodes);
+        
         //The received tangle is valid, so we update our tangle according to it
         for(int i = 0 ; i < NewlyAddedNodes.size(); i++)
         {
             NewlyAddedNodes.get(i).state = 0;
             MyTangle.addNodeWithoutChecking(NewlyAddedNodes.get(i));
         }
+        
+        //This works but has overhead (It completely recalculates the cumulative weights of the dag)
+        //for(var node : MyTangle.DAG)
+        //{
+        //    node.CumulativeWeight = 1;
+        //}
+        //MyTangle.DAG = Tangle.recalculateCumulativeWeights(MyTangle.DAG);
 
         return true;
+    }
+
+    
+    public boolean calculateCumulativeWeightsAfterAddingANode(String NodeId)
+    {
+        try
+        {
+            Node n = this.MyTangle.findNodeById(NodeId);
+            if(n == null) return false;
+            
+            return this.MyTangle.calculateCumulativeWeightsAfterAddingANode(n);
+        }
+        catch (Exception e) { 
+            System.out.println(e.getMessage());
+        }
+
+        return false;
+    }
+    
+    public boolean calculateCumulativeWeightsAfterAddingAGraph(ArrayList<Node> NewlyAddedNodes)
+    {
+        try
+        {
+            return this.MyTangle.calculateCumulativeWeightsAfterAddingAGraph(NewlyAddedNodes);
+        }
+        catch (Exception e) { 
+            System.out.println(e.getMessage());
+        }
+
+        return false;
     }
 }

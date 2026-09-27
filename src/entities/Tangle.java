@@ -1,7 +1,11 @@
 package entities;
 
 import crypto.HashAndSign;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import models.NodePair;
+import models.NodeWeight;
 
 /**
  * @author hosseinAghahosseini
@@ -64,7 +68,7 @@ public class Tangle {
         return false;
     }
     
-    public Node findNodeById(String nodeId)
+    public Node findNodeById(String nodeId) //todo make it seacrh by hash in different files (or servers)
     {
         for(int i = DAG.size() - 1; i >= 0 ; i--)
         {
@@ -76,7 +80,64 @@ public class Tangle {
         return null;
     }
     
-    public ArrayList<Node> selectTipNodes() //todo implement real tip selection algorithm
+    public NodePair findNodePairByIds(String nodeId1, String nodeId2) 
+    {
+        NodePair np = new NodePair();
+        for(int i = DAG.size() - 1; i >= 0 ; i--)
+        {
+            if(np.Node1 == null && DAG.get(i).NodeId.equals(nodeId1))
+            {
+                np.Node1 = DAG.get(i);
+            }
+            
+            if(np.Node2 == null && DAG.get(i).NodeId.equals(nodeId2))
+            {
+                np.Node2 = DAG.get(i);
+            }
+            
+            if(np.Node1 != null && np.Node2 != null)
+            {
+                break;
+            }
+        }
+        
+        if(np.Node1 == null && np.Node2 == null)
+        {
+            return null;
+        }
+        else if(np.Node1 == null)
+        {
+            np.Node1 = np.Node2;
+            np.are2NodesTheSame = true;
+        }
+        else if(np.Node2 == null)
+        {
+            np.Node2 = np.Node1;
+            np.are2NodesTheSame = true;
+        }
+        else if(nodeId1.equals(nodeId2))
+        {
+            np.are2NodesTheSame = true;
+        }
+
+        return np;
+    }
+    
+    public ArrayList<Node> findNodesThatAcceptsAnother(String anotheNodeId) //todo make it seacrh by hash in different files (or servers)
+    {
+        ArrayList<Node> nodes = new ArrayList<>();
+        
+        for(int i = DAG.size() - 1; i >= 0 ; i--)
+        {
+            if(DAG.get(i).FirstAcceptedNodeId.equals(anotheNodeId) || DAG.get(i).SecondAcceptedNodeId.equals(anotheNodeId) )
+            {
+                nodes.add(DAG.get(i));
+            }
+        }
+        return nodes;
+    }
+    
+    public ArrayList<Node> selectTipNodesSimple() //just selects the 2 latest nodes of the tangle as edge nodes
     {
         ArrayList<Node> Tips = new ArrayList<>();
         
@@ -92,6 +153,42 @@ public class Tangle {
         return Tips;
     }
     
+    public ArrayList<Node> selectTipNodes() //temporary to make app work
+    {
+        ArrayList<Node> Tips = new ArrayList<>();
+        
+        for(int i = DAG.size() - 1; i >= 0 ; i--)
+        {
+            if(DAG.get(i).NodeId != null)
+            {
+                Tips.add(DAG.get(i));              
+            }
+            if(Tips.size() >= 2)
+                break;
+        }
+        return Tips;
+    }
+    
+    public ArrayList<Node> selectTipNodesMCMC() //todo continue implementing tip selection algorithm
+    {
+        if(DAG == null || DAG.isEmpty() || DAG.size() < 10)
+            return selectTipNodesSimple();
+        
+        ArrayList<Node> Tips = new ArrayList<>();
+        
+        //start at a milestone node (or genesis at start)
+        Node milestone = DAG.get(0); //genesis
+        if(milestone == null) return null;
+        
+        //monte carlo markov chain random walk (walk through the edge nodes with weigh bias)
+        var canditateNextDestinationNodes = findNodesThatAcceptsAnother(milestone.NodeId);
+        
+        //choosing the next node according to cumulative weight
+        
+        
+        return Tips;
+    }
+    
     public static boolean hasCycle(ArrayList<Node> Nodes)
     {
         for(int i = 0; i < Nodes.size(); i++)
@@ -100,8 +197,7 @@ public class Tangle {
             {
                 return true;
             }
-        }
-        
+        } 
         return false;
     }
     
@@ -203,8 +299,7 @@ public class Tangle {
                     secondRes = true;
                 }
             }
-      
-            
+
         }
 
         //we haven't found the accpted node in new nodes, so we have to check the existing nodes of our tangle
@@ -238,6 +333,326 @@ public class Tangle {
 //        return false;
     }
     
+    public static ArrayList<Node> selectBestTangle(ArrayList<ArrayList<Node>> advertisedDags) //todo implement real tangle selection algorithm
+    {
+        ArrayList<Node> bestDag = new ArrayList<Node>();
+        Node genesis = new Node();
+        genesis = genesis.loadGenesis();
+        
+        for(ArrayList<Node> dag : advertisedDags)
+        {
+            if(dag.size() > bestDag.size() && dag.get(0).NodeId.equals(genesis.NodeId))
+            {
+                bestDag = dag;
+            }
+        }
+        
+        return bestDag;
+    }
+    
+    public void SetTangleClone(ArrayList<Node> proposedDAG)
+    {
+        this.DAG = new ArrayList<>();
+        for(int i = 0; i < proposedDAG.size(); i++)
+        {
+            Node n = new Node(proposedDAG.get(i));
+            this.DAG.add(n);
+        }
+    }
+    
+    public static ArrayList<Node> recalculateCumulativeWeights(ArrayList<Node> NewNodes)
+    {
+        if(NewNodes.isEmpty()) return NewNodes;
+                
+        for (Node updatingNode : NewNodes) 
+        {                    
+            for (Node checkingNode : NewNodes) 
+            {
+                for (Node cleaningNode : NewNodes) //clean visit states
+                {
+                    cleaningNode.visited = 0;
+                }
+                
+                if(checkingNode.NodeId.equals(updatingNode.NodeId)) continue;
+                
+                Deque<Node> stack = new ArrayDeque<>(); //dfs
+                stack.push(checkingNode);
+                
+                while(!stack.isEmpty())
+                {
+                    var topNode = stack.pop();
+                    if(topNode.visited == 1) continue; //we have already visited the node
+
+                    topNode.visited = 1;
+                    if(topNode.NodeId.equals(updatingNode.NodeId)) //checkingNode accepts updatingNode (directly or indirectly)
+                    {
+                        updatingNode.CumulativeWeight += checkingNode.OwnWeight; 
+                    }
+
+                    //find acceptedNodes
+                    short found = 0;
+                    for(Node acceptingNode : NewNodes)
+                    {
+                        if(topNode.FirstAcceptedNodeId.equals(topNode.SecondAcceptedNodeId)) //2 edge to one node
+                        {
+                            if(acceptingNode.NodeId.equals(topNode.FirstAcceptedNodeId))
+                            {
+                                stack.push(acceptingNode);
+                                break;
+                            }
+                        }
+                        else //normal case
+                        {
+                            if(acceptingNode.NodeId.equals(topNode.FirstAcceptedNodeId)) //found node 1
+                            {
+                                stack.push(acceptingNode);
+                                found++;
+                            }
+                            if(acceptingNode.NodeId.equals(topNode.SecondAcceptedNodeId))  //found node 2
+                            {
+                                stack.push(acceptingNode);
+                                found++;
+                            }
+                        }
+                        if(found == 2) break;
+                    }
+                }
+            }
+        }
+        
+        return NewNodes;
+    }
+    
+    public boolean calculateCumulativeWeightsAfterAddingANode(Node addedNode)
+    {
+        //reset state
+        for(int i = 0; i < this.DAG.size(); i++)
+        {
+            DAG.get(i).visited = 0;
+        }
+        
+        Deque<Node> stack = new ArrayDeque<>(); //dfs
+        stack.push(addedNode);
+        
+        while(!stack.isEmpty())
+        {
+            var topNode = stack.pop();
+            if(topNode.visited == 1) //we have already visited the node
+            {
+                continue;
+            }
+            topNode.visited = 1;
+            topNode.CumulativeWeight += addedNode.OwnWeight;
+            
+            
+            var acceptedNodes = findNodePairByIds(topNode.FirstAcceptedNodeId, topNode.SecondAcceptedNodeId);
+            
+            if(acceptedNodes == null) continue;
+            
+            if(acceptedNodes.are2NodesTheSame)
+            {
+                stack.push(acceptedNodes.Node1);
+            }
+            else
+            {
+                stack.push(acceptedNodes.Node1);
+                stack.push(acceptedNodes.Node2);
+            }
+        }
+        
+        return true;
+    }
+    
+    public boolean calculateCumulativeWeightsAfterAddingAGraph(ArrayList<Node> NewNodes) //todo check
+    {
+        if(NewNodes.isEmpty()) return false;
+        for(int j = 0; j < NewNodes.size(); j++) //clearing new nodes
+        {
+            NewNodes.get(j).visited = 0;
+            NewNodes.get(j).OwnWeight = 1;
+            NewNodes.get(j).CumulativeWeight = 1;
+        } 
+
+        //find the entrance points to our graph //ok
+        ArrayList<NodeWeight> EntranceNodes = new ArrayList<>();
+        for(int i = 0; i < NewNodes.size(); i++)
+        {
+            boolean node1Found = false, node2Found = false;
+            var currentNode1 = NewNodes.get(i).FirstAcceptedNodeId;
+            var currentNode2 = NewNodes.get(i).SecondAcceptedNodeId;
+            
+            for(int j = 0; j < NewNodes.size(); j++)
+            {
+                if(node1Found == false && NewNodes.get(j).NodeId.equals(currentNode1))
+                {
+                    node1Found = true;
+                }
+                if(node2Found == false && NewNodes.get(j).NodeId.equals(currentNode2))
+                {
+                    node2Found = true;
+                }
+                if(node1Found && node2Found) break;
+            }
+            if(!node1Found)
+            {
+                boolean found = false;
+                for(var node: EntranceNodes)
+                {
+                    if(node.NodeId.equals(currentNode1))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found) EntranceNodes.add(new NodeWeight(currentNode1));
+            }
+            if(!node2Found) 
+            {
+                boolean found = false;
+                for(var node: EntranceNodes)
+                {
+                    if(node.NodeId.equals(currentNode2))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found) EntranceNodes.add(new NodeWeight(currentNode2));
+            }
+        }
+        
+        //remove the entrance nodes that lead to each other
+        ArrayList<NodeWeight> toRemove = new ArrayList<>();
+        for(var Dest : EntranceNodes)
+        {
+            for(var Source : EntranceNodes)
+            {
+                if(Dest.NodeId.equals(Source.NodeId)) continue;
+                
+                Deque<Node> stack = new ArrayDeque<>(); 
+                var currentNode = findNodeById(Source.NodeId);
+                stack.push(currentNode);
+
+                while(!stack.isEmpty())
+                {
+                    var topNode = stack.pop();
+                    //we reached to dest (dest <- source)
+                    if(topNode.FirstAcceptedNodeId.equals(Dest.NodeId) || topNode.SecondAcceptedNodeId.equals(Dest.NodeId))
+                    {
+                        //mark dest as not a usefull entrance
+                        toRemove.add(Dest);
+                    }
+                    
+                }
+            }
+        }
+        EntranceNodes.removeAll(toRemove);
+        
+        //set cumulative weights for entrance nodes
+        //calcualete which of the new nodes lead to entrance points
+        for(int i = 0; i < EntranceNodes.size(); i++)
+        {
+            var EntranceNode = EntranceNodes.get(i);
+
+            //searching through new dag
+            for(int j = 0; j < NewNodes.size(); j++)
+            {
+                //clearing node states
+                for(var node : NewNodes)
+                {
+                    node.visited = 0;
+                }
+            
+                //do a dfs for each node to find out if it reaches the entrance node
+                var AcceptingNode = NewNodes.get(j);
+
+                //dfs
+                Deque<Node> stack = new ArrayDeque<>();
+                stack.push(AcceptingNode);
+
+                while(!stack.isEmpty())
+                {
+                    var topNode = stack.pop();
+                    if(topNode.visited == 1) //we have already visited the node
+                    {
+                        continue;
+                    }
+                    topNode.visited = 1;
+                    
+                    //check if we accept the current node
+                    if(EntranceNode.NodeId.equals(topNode.FirstAcceptedNodeId) || EntranceNode.NodeId.equals(topNode.SecondAcceptedNodeId))
+                    {
+                        EntranceNode.weight += AcceptingNode.OwnWeight;
+                        break;
+                    }
+                    
+                    short found = 0;
+                    for(int k = 0; k < NewNodes.size(); k++)
+                    {
+                        if(topNode.FirstAcceptedNodeId.equals(NewNodes.get(k).NodeId))
+                        {
+                            found++;
+                            stack.push(NewNodes.get(k));
+                        }
+                        else if(topNode.SecondAcceptedNodeId.equals(NewNodes.get(k).NodeId))
+                        {
+                            found++;
+                            stack.push(NewNodes.get(k));
+                        }
+                        if(found == 2) break;
+                    }
+                }
+            }
+        }
+        
+        //updating node weights of new nodes
+        NewNodes = recalculateCumulativeWeights(NewNodes);
+        
+        //updating node weights of our own graph
+        for(int i = 0; i < EntranceNodes.size(); i++)
+        {
+            //reset state
+            for(int j = 0; j < this.DAG.size(); j++)
+            {
+                DAG.get(j).visited = 0;
+            }
+            
+            Node edgeNode = findNodeById(EntranceNodes.get(i).NodeId);
+            int weight2add = EntranceNodes.get(i).weight;
+
+            Deque<Node> stack = new ArrayDeque<>(); //dfs
+            stack.push(edgeNode);
+
+            while(!stack.isEmpty())
+            {
+                var topNode = stack.pop();
+                if(topNode.visited == 1) //we have already visited the node
+                {
+                    continue;
+                }
+                topNode.visited = 1;
+                topNode.CumulativeWeight += weight2add;
+
+                var acceptedNodes = findNodePairByIds(topNode.FirstAcceptedNodeId, topNode.SecondAcceptedNodeId);
+
+                if(acceptedNodes == null) continue;
+
+                if(acceptedNodes.are2NodesTheSame)
+                {
+                    stack.push(acceptedNodes.Node1);
+                }
+                else
+                {
+                    stack.push(acceptedNodes.Node1);
+                    stack.push(acceptedNodes.Node2);
+                }
+            }
+        }
+        
+        return true;
+    }
+    
+    //to string
     public static String DagToString(ArrayList<Node> dag, String PublicKey, boolean onlyMyNodes)
     {
         ArrayList<Node> MyEhrNodes = new ArrayList<Node>();
@@ -293,22 +708,5 @@ public class Tangle {
         }
         
         return Node.toJsonArray(MyEhrNodes);
-    }
-    
-    public static ArrayList<Node> selectBestTangle(ArrayList<ArrayList<Node>> advertisedDags) //todo implement real tangle selection algorithm
-    {
-        ArrayList<Node> bestDag = new ArrayList<Node>();
-        Node genesis = new Node();
-        genesis = genesis.loadGenesis();
-        
-        for(ArrayList<Node> dag : advertisedDags)
-        {
-            if(dag.size() > bestDag.size() && dag.get(0).NodeId.equals(genesis.NodeId))
-            {
-                bestDag = dag;
-            }
-        }
-        
-        return bestDag;
     }
 }

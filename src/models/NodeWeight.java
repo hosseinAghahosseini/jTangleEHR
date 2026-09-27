@@ -4,21 +4,17 @@
  */
 package models;
 
-import entities.User;
-
 /**
+ *
  * @author hosseinAghahosseini
  */
-
-public class User4UI extends User{
+public class NodeWeight {
+    public String NodeId;
+    public int weight;
     
-    public String shortUserId;
-    
-    //Todo add neighbor users
-
-    public User4UI(UserRole userRole) {
-        super(userRole);
+    public NodeWeight(String Id)
+    {
+        NodeId = Id;
+        weight = 0;
     }
-    
-    
 }

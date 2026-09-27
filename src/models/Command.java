@@ -139,6 +139,32 @@ public class Command {
         return commandStr;
     }
     
+    public static int findUserSearchIndexByUserIdString(String UserString)
+    {
+        int foundIndex = -1;
+        String toFindUser = UserString.replaceAll("\"", "");
+
+        //Add EHR for a Random() user
+        if(toFindUser.toLowerCase().contains("random("))
+        {
+            Random r = new Random();
+            foundIndex = r.nextInt(StaticVariables.Users.size());
+        }
+        else //Add EHR for an specific user
+        {
+            for(int j = 0; j < StaticVariables.Users.size(); j++)
+            {
+                if(StaticVariables.Users.get(j).shortUserId.equals(toFindUser) || StaticVariables.Users.get(j).HashedPublicKey.equals(toFindUser))
+                {
+                    foundIndex = j;
+                    break;
+                }
+            }
+        }
+        
+        return foundIndex;
+    }
+    
     class ExecuteCommandTask extends TimerTask
     {
         String commandStrOriginal;
@@ -221,9 +247,18 @@ public class Command {
                 String[] parameters;
                 String UserShortNameToTrickCompiler = "";
 
-                if(command.length == 2)
+                if(command.length == 2) //a user variable is set
                 {
-                    UserShortNameToTrickCompiler = command[0];
+                    boolean exists = StaticVariables.doesUserExist(command[0]);
+                    if(!exists)
+                    {
+                        UserShortNameToTrickCompiler = command[0];
+                    }
+                    else
+                    {
+                        Random r = new Random();
+                        UserShortNameToTrickCompiler = command[0] + "_" + String.valueOf(r.nextInt(0,99999));
+                    }
                     parameters = command[1].split(",");
                 }
                 else
@@ -304,12 +339,21 @@ public class Command {
                 String[] parameters;
                 String NodeNameToTrickCompiler = "";
 
-                if(command.length == 2)
+                if(command.length == 2) //a node variable is set
                 {
-                    NodeNameToTrickCompiler = command[0];
+                    boolean exists = StaticVariables.doesNodeExist(command[0]);
+                    if(!exists)
+                    {
+                        NodeNameToTrickCompiler = command[0];
+                    }
+                    else //an already existing variable name was used, so we add something to its end
+                    {
+                        Random r = new Random();
+                        NodeNameToTrickCompiler = command[0] + "_" + String.valueOf(r.nextInt(0,99999));
+                    }
                     parameters = command[1].split(",");
                 }
-                else
+                else //no variable is set
                 {
                     parameters = commandStr.split(",");
                     NodeNameToTrickCompiler = "";
@@ -320,25 +364,17 @@ public class Command {
                 }
                 
                 final String NodeVar = NodeNameToTrickCompiler; //the variable that we can get the node from
-                
 
                 if(parameters.length < 3)
                 {
                     outputPrintLine("Command createEHR() is incomplete");
+                    return;
                 }
                 else 
                 {
                     //finding user
-                    int foundIndex = -1;
-                    String toFindUser = parameters[0].replaceAll("\"", "");
-                    for(int j = 0; j < StaticVariables.Users.size(); j++)
-                    {
-                        if(StaticVariables.Users.get(j).shortUserId.equals(toFindUser) || StaticVariables.Users.get(j).HashedPublicKey.equals(toFindUser))
-                        {
-                            foundIndex = j;
-                            break;
-                        }
-                    }
+                    int foundIndex = findUserSearchIndexByUserIdString(parameters[0]);
+                    
                     if(foundIndex >= 0)
                     {
                         User4UI currentUserTemp = StaticVariables.Users.get(foundIndex);
@@ -352,6 +388,7 @@ public class Command {
                         }
                         //final int finalIndex = foundIndex;
                         final boolean finalEncryptEHR = encryptEHR;
+                        String NodeId = "";
 
                         if(parameters.length == 3)
                         {
@@ -359,17 +396,19 @@ public class Command {
                             {
                                 try 
                                 {
-                                    String NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, "", "", "", "");
+                                    NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, "", "", "", "");
                                     
                                     outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar));                                      
                                 }
                                 catch(Exception er) {
                                     outputPrintLine(er.getMessage());
+                                    return;
                                 }  
                             }
                             else
                             {
                                 outputPrintLine("Command createEHR() is incomplete");
+                                return;
                             }                          
                         }
                         else if (parameters.length == 4)
@@ -378,7 +417,7 @@ public class Command {
                             {
                                 if(currentUser.Role == User.UserRole.Patient)
                                 {
-                                    String NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, "", "", "", "");         
+                                    NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, "", "", "", "");         
 
                                     outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
                                 }
@@ -388,7 +427,7 @@ public class Command {
                                     var patient = StaticVariables.findUserFromList(parameters[3]);
                                     if(patient != null)
                                     {
-                                        String NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, "", ""); 
+                                        NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, "", ""); 
                                         StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
 
                                         outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
@@ -396,12 +435,14 @@ public class Command {
                                     else
                                     {
                                         outputPrintLine("Error happened at Command createEHR(). Patient was not found.");
+                                        return;
                                     }
                                 }
 
                             }
                             catch(Exception er) {
                                 outputPrintLine(er.getMessage());
+                                return;
                             }  
                         }
                         else if (parameters.length == 5)
@@ -419,7 +460,7 @@ public class Command {
 
                                     if(patient != null && doctor != null)
                                     {
-                                        String NodeId = currentUser.addNodeToTangleAsHospital(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, doctor.MyPreviousNodeId, doctor.HashedPublicKey); 
+                                        NodeId = currentUser.addNodeToTangleAsHospital(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, doctor.MyPreviousNodeId, doctor.HashedPublicKey); 
                                         StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
                                         StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
 
@@ -428,6 +469,7 @@ public class Command {
                                     else
                                     {
                                         outputPrintLine("Error happened at Command createEHR(). Patient/Doctor is not found.");
+                                        return;
                                     }
                                 }
                                 else if (currentUser.Role == User.UserRole.Doctor)
@@ -436,7 +478,7 @@ public class Command {
                                     var patient = StaticVariables.findUserFromList(parameters[3]);
                                     if(patient != null)
                                     {
-                                        String NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, "", ""); 
+                                        NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, "", ""); 
                                         StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
 
                                         outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
@@ -444,6 +486,7 @@ public class Command {
                                     else
                                     {
                                         outputPrintLine("Error happened at Command createEHR(). Patient is not found.");
+                                        return;
                                     }
                                 }
                                 else if (currentUser.Role == User.UserRole.Patient)
@@ -453,7 +496,7 @@ public class Command {
 
                                     if(doctor != null)
                                     {
-                                        String NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, doctor.MyPreviousNodeId, doctor.HashedPublicKey, "", ""); 
+                                        NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, doctor.MyPreviousNodeId, doctor.HashedPublicKey, "", ""); 
                                         StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
 
                                         outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
@@ -461,12 +504,14 @@ public class Command {
                                     else
                                     {
                                         outputPrintLine("Error happened at Command createEHR(). Doctor is not found.");
+                                        return;
                                     }
                                 }
 
                             }
                             catch(Exception er) {
                                 outputPrintLine(er.getMessage());
+                                return;
                             }  
                         }
                         else if (parameters.length == 6)
@@ -483,7 +528,7 @@ public class Command {
 
                                     if(patient != null && doctor != null)
                                     {
-                                        String NodeId = currentUser.addNodeToTangleAsHospital(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, doctor.MyPreviousNodeId, doctor.HashedPublicKey); 
+                                        NodeId = currentUser.addNodeToTangleAsHospital(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, doctor.MyPreviousNodeId, doctor.HashedPublicKey); 
                                         StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
                                         StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
 
@@ -492,6 +537,7 @@ public class Command {
                                     else
                                     {
                                         outputPrintLine("Error happened at Command createEHR(). Patient/Doctor is not found.");
+                                        return;
                                     }
                                 }
                                 else if (currentUser.Role == User.UserRole.Doctor)
@@ -504,7 +550,7 @@ public class Command {
 
                                     if(patient != null && hospital != null)
                                     {
-                                        String NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, hospital.MyPreviousNodeId , hospital.HashedPublicKey); 
+                                        NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, hospital.MyPreviousNodeId , hospital.HashedPublicKey); 
                                         StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
                                         StaticVariables.Users.get(hospital.userIndex).MyPreviousNodeId = NodeId;
 
@@ -513,6 +559,7 @@ public class Command {
                                     else
                                     {
                                         outputPrintLine("Error happened at Command createEHR(). Patient is not found.");
+                                        return;
                                     }
                                 }
                                 else if (currentUser.Role == User.UserRole.Patient)
@@ -525,7 +572,7 @@ public class Command {
 
                                     if(doctor != null && hospital != null)
                                     {
-                                        String NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, doctor.MyPreviousNodeId, doctor.HashedPublicKey, hospital.MyPreviousNodeId , hospital.HashedPublicKey); 
+                                        NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, doctor.MyPreviousNodeId, doctor.HashedPublicKey, hospital.MyPreviousNodeId , hospital.HashedPublicKey); 
                                         StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
                                         StaticVariables.Users.get(hospital.userIndex).MyPreviousNodeId = NodeId;
 
@@ -534,20 +581,25 @@ public class Command {
                                     else
                                     {
                                         outputPrintLine("Error happened at Command createEHR(). Doctor is not found.");
+                                        return;
                                     }
                                 }
-
                             }
                             catch(Exception er) {
                                 outputPrintLine(er.getMessage());
+                                return;
                             }  
                         }
+                        
+                        //set new cumulative weights after we added a node
+                        currentUser.calculateCumulativeWeightsAfterAddingANode(NodeId);
 
                         //StaticVariables.Users.get(foundIndex).addNodeToTangle(NodeName, rootPaneCheckingEnabled, toFindUser, toFindUser, toFindUser, toFindUser, toFindUser, toFindUser)
                     }
                     else
                     {
-                        outputPrintLine("In createEHR(), User " + toFindUser + " was not found");
+                        outputPrintLine("In createEHR(), User " + parameters[0] + " was not found");
+                        return;
                     }
                 }
 
@@ -648,25 +700,25 @@ public class Command {
             {
                 commandStr = Command.sanitize(commandStr, "advertiseTangle");
                 var parameters = commandStr.split(",");
-                var sender = StaticVariables.findUserFromList(parameters[0]);
-                if(sender == null)
+                int senderId = findUserSearchIndexByUserIdString(parameters[0]);
+                if(senderId < 0)
                 {
                     outputPrintLine("Error happened at advertiseTangle(). Sender user was not found.");
                     return;
                 }
-                var senderUser = StaticVariables.Users.get(sender.userIndex);
+                var senderUser = StaticVariables.Users.get(senderId);
 
-                if(parameters.length == 1)
+                if(parameters.length == 1) //sender will advertise its tangle to all
                 {
                     for(int i = 0; i < StaticVariables.Users.size(); i++)
                     {
                         StaticVariables.Users.get(i).receiveTangleAndUpdateSelf(senderUser.advertiseTangle());
                     }
-                    outputPrintLine("Tangle advertisment was completed successfully.");
+                    outputPrintLine("Tangle advertisment (to all) was completed successfully by User ["+ parameters[0] + "].");
                 }
-                else if(parameters.length == 2)
+                else if(parameters.length == 2) //sender will advertise its tangle to specific users
                 {
-                    if(parameters[1].isBlank())
+                    if(parameters[1].isBlank()) //same as advertise to all
                     {
                         for(int i = 0; i < StaticVariables.Users.size(); i++)
                         {
@@ -675,20 +727,21 @@ public class Command {
                     }
                     else
                     {
-                        var receiver = StaticVariables.findUserFromList(parameters[1]);
-                        if(receiver == null)
+                        int receiverId = findUserSearchIndexByUserIdString(parameters[1]);
+                        if(receiverId < 0)
                         {
                             outputPrintLine("Error happened at advertiseTangle(). Receiver user was not found.");
                             return;
                         }
-                        var receiverUser = StaticVariables.Users.get(receiver.userIndex);
+                        var receiverUser = StaticVariables.Users.get(receiverId);
                         receiverUser.receiveTangleAndUpdateSelf(senderUser.advertiseTangle());
                     }
-                    outputPrintLine("Tangle advertisment was completed successfully.");
+                    outputPrintLine("Tangle advertisment was completed successfully by User ["+ parameters[0] + "].");
                 }
                 else
                 {
                     outputPrintLine("Error happened at advertiseTangle(). Only 1 or 2 Paramentes should be provided.");
+                    return;
                 }
             }
             else if(commandStrOriginal.contains("setTangle("))
@@ -709,7 +762,9 @@ public class Command {
                     {
                         Random r = new Random();
                         //setting user's tangle according to a random user's tangle
-                        senderUser.MyTangle.DAG = StaticVariables.Users.get(r.nextInt(0, StaticVariables.Users.size())).MyTangle.DAG;
+                        //senderUser.MyTangle.DAG = StaticVariables.Users.get(r.nextInt(0, StaticVariables.Users.size())).MyTangle.DAG;
+                        int RandomId = r.nextInt(0, StaticVariables.Users.size());
+                        senderUser.MyTangle.SetTangleClone(StaticVariables.Users.get(RandomId).MyTangle.DAG);
                     }
                     else //all
                     {
@@ -718,7 +773,8 @@ public class Command {
                         {
                             dags.add(StaticVariables.Users.get(i).MyTangle.DAG);
                         }
-                        senderUser.MyTangle.DAG = Tangle.selectBestTangle(dags);
+                        //senderUser.MyTangle.DAG = Tangle.selectBestTangle(dags);
+                        senderUser.MyTangle.SetTangleClone(Tangle.selectBestTangle(dags));
                     }
                     outputPrintLine("User tangle was updated.");
                 }
@@ -763,7 +819,8 @@ public class Command {
                             }
                             
                             //set tangle
-                            senderUser.MyTangle.DAG = Tangle.selectBestTangle(dags);
+                            //senderUser.MyTangle.DAG = Tangle.selectBestTangle(dags);
+                            senderUser.MyTangle.SetTangleClone(Tangle.selectBestTangle(dags));
                             outputPrintLine("User tangle was updated.");
                         }
                         else

@@ -4,21 +4,15 @@
  */
 package models;
 
-import entities.User;
+import entities.Node;
 
 /**
  * @author hosseinAghahosseini
  */
 
-public class User4UI extends User{
+public class NodePair {
     
-    public String shortUserId;
-    
-    //Todo add neighbor users
-
-    public User4UI(UserRole userRole) {
-        super(userRole);
-    }
-    
-    
+    public Node Node1;
+    public Node Node2;
+    public boolean are2NodesTheSame = false;
 }

@@ -10,14 +10,22 @@ import models.SimpleNode;
 import entities.Node;
 import entities.Tangle;
 import entities.User;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.security.Policy;
 import java.util.ArrayList;
+import java.util.Scanner;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import models.Command;
 import models.StaticVariables;
 import utils.DateNTime;
 
 /**
- *
  * @author hosseinAghahosseini
  */
 public class IDE extends javax.swing.JFrame {
@@ -28,9 +36,12 @@ public class IDE extends javax.swing.JFrame {
 //    ArrayList<SimpleNode> Nodes = new ArrayList<>();
     boolean outputToTextArea = true;
     
+    String FileAddress = "";
+    
     
     public IDE() {
         initComponents();
+        this.setTitle("jTangleEHR");
     }
 
     /**
@@ -51,8 +62,10 @@ public class IDE extends javax.swing.JFrame {
         jScrollPane2 = new javax.swing.JScrollPane();
         outputText = new javax.swing.JTextArea();
         jMenuBar1 = new javax.swing.JMenuBar();
-        jMenu3 = new javax.swing.JMenu();
         jMenu1 = new javax.swing.JMenu();
+        jMenuItem20 = new javax.swing.JMenuItem();
+        jMenuItem18 = new javax.swing.JMenuItem();
+        jMenuItem19 = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         jMenuItem8 = new javax.swing.JMenuItem();
         jMenuItem7 = new javax.swing.JMenuItem();
@@ -68,10 +81,11 @@ public class IDE extends javax.swing.JFrame {
         jMenuItem2 = new javax.swing.JMenuItem();
         jMenuItem3 = new javax.swing.JMenuItem();
         jMenuItem4 = new javax.swing.JMenuItem();
-        jMenuItem5 = new javax.swing.JMenuItem();
-        jMenuItem6 = new javax.swing.JMenuItem();
         jMenuItem9 = new javax.swing.JMenuItem();
         jMenuItem13 = new javax.swing.JMenuItem();
+        jMenu10 = new javax.swing.JMenu();
+        jMenuItem6 = new javax.swing.JMenuItem();
+        jMenuItem5 = new javax.swing.JMenuItem();
         jMenu9 = new javax.swing.JMenu();
         jMenuItem16 = new javax.swing.JMenuItem();
         jMenuItem17 = new javax.swing.JMenuItem();
@@ -152,10 +166,34 @@ public class IDE extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
-        jMenu3.setText("jTangleIDE");
-        jMenuBar1.add(jMenu3);
+        jMenuBar1.setToolTipText("jTangleIDE");
 
         jMenu1.setText("File");
+
+        jMenuItem20.setText("Save");
+        jMenuItem20.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem20ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem20);
+
+        jMenuItem18.setText("Save As");
+        jMenuItem18.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem18ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem18);
+
+        jMenuItem19.setText("Load");
+        jMenuItem19.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem19ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem19);
+
         jMenuBar1.add(jMenu1);
 
         jMenu2.setText("Edit");
@@ -261,22 +299,6 @@ public class IDE extends javax.swing.JFrame {
         });
         jMenu5.add(jMenuItem4);
 
-        jMenuItem5.setText("printEHR");
-        jMenuItem5.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem5ActionPerformed(evt);
-            }
-        });
-        jMenu5.add(jMenuItem5);
-
-        jMenuItem6.setText("printTangle");
-        jMenuItem6.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem6ActionPerformed(evt);
-            }
-        });
-        jMenu5.add(jMenuItem6);
-
         jMenuItem9.setText("advertiseTangle");
         jMenuItem9.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -292,6 +314,26 @@ public class IDE extends javax.swing.JFrame {
             }
         });
         jMenu5.add(jMenuItem13);
+
+        jMenu10.setText("Print");
+
+        jMenuItem6.setText("printTangle");
+        jMenuItem6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem6ActionPerformed(evt);
+            }
+        });
+        jMenu10.add(jMenuItem6);
+
+        jMenuItem5.setText("printEHR");
+        jMenuItem5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem5ActionPerformed(evt);
+            }
+        });
+        jMenu10.add(jMenuItem5);
+
+        jMenu5.add(jMenu10);
 
         jMenu9.setText("Variables");
 
@@ -391,6 +433,7 @@ public class IDE extends javax.swing.JFrame {
                     outputPrintLine(e.getMessage());
                 }
                 
+                //todo light client
                 //trim tavassot kaarbara anjam she be sorat dore ii
                 //ehr ha bar asas hash toye file ha va dar nahayet server haye mokhtalef rikhte beshe
             }
@@ -472,6 +515,117 @@ public class IDE extends javax.swing.JFrame {
         inputPrint("//Shows List of Nodes (limit is an optional field to show the number of nodes shown;\nlistNode(limit, isAscending);\n");
     }//GEN-LAST:event_jMenuItem17ActionPerformed
 
+    private void jMenuItem18ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem18ActionPerformed
+     
+        //Save As File
+        JFileChooser fc = new JFileChooser();
+        //Adding extension filters
+        FileNameExtensionFilter filterTxt = new FileNameExtensionFilter(
+                "Text file (.txt)", "txt");
+        //fc.addChoosableFileFilter(filterTxt);
+        fc.setFileFilter(filterTxt);
+
+        int returnVal = fc.showSaveDialog(jPanel1);
+        
+        if (returnVal == JFileChooser.APPROVE_OPTION)
+        {
+            String stringToWrite = codeText.getText();
+            try 
+            {
+                var fileToSaveAddress = fc.getSelectedFile().getAbsolutePath() + ".txt";
+                BufferedWriter writer = new BufferedWriter(new FileWriter(fileToSaveAddress, false));
+                writer.write(stringToWrite);
+                writer.close();
+                FileAddress = fileToSaveAddress;
+                JOptionPane.showMessageDialog(null, "The file was saved successfully");
+            }
+            catch (IOException ioe) {
+                System.out.println("Couldn't write to file");
+            }
+        } 
+    }//GEN-LAST:event_jMenuItem18ActionPerformed
+
+    private void jMenuItem19ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem19ActionPerformed
+        
+        //Load File
+        JFileChooser fc = new JFileChooser();
+        //Adding extension filters
+        FileNameExtensionFilter filterTxt = new FileNameExtensionFilter(
+                "Text file (.txt)", "txt");
+
+        fc.setFileFilter(filterTxt);
+
+        //In response to a button click:
+        int returnVal = fc.showSaveDialog(jPanel1);
+        
+        if (returnVal == JFileChooser.APPROVE_OPTION)
+        {
+            File file = fc.getSelectedFile();
+            
+            try
+            {
+                codeText.setText("");
+                Scanner scanner = new Scanner(file);
+                while(scanner.hasNext())
+                {
+                    codeText.append(scanner.nextLine() + "\n");
+                }
+                
+                scanner.close();
+                FileAddress = file.getAbsolutePath();
+            }
+            catch (FileNotFoundException ex)
+            {
+                System.out.println("Couldn't read the file");
+            }
+        } 
+    }//GEN-LAST:event_jMenuItem19ActionPerformed
+
+    private void jMenuItem20ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem20ActionPerformed
+        //Save
+        String stringToWrite = codeText.getText();
+        if(FileAddress.isBlank())
+        {
+            //Save As File
+            JFileChooser fc = new JFileChooser();
+            //Adding extension filters
+            FileNameExtensionFilter filterTxt = new FileNameExtensionFilter(
+                    "Text file (.txt)", "txt");
+            fc.setFileFilter(filterTxt);
+
+            int returnVal = fc.showSaveDialog(jPanel1);
+
+            if (returnVal == JFileChooser.APPROVE_OPTION)
+            {
+                try 
+                {
+                    var fileToSaveAddress = fc.getSelectedFile().getAbsolutePath() + ".txt";
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(fileToSaveAddress, true));
+                    writer.write(stringToWrite);
+                    writer.close();
+                    FileAddress = fileToSaveAddress;
+                    JOptionPane.showMessageDialog(null, "The file was saved successfully");
+                }
+                catch (IOException ioe) {
+                    System.out.println("Couldn't write to file.");
+                }
+            } 
+        }
+        else
+        {
+            try 
+            {
+                BufferedWriter writer = new BufferedWriter(new FileWriter(FileAddress, false));
+                writer.write(stringToWrite);
+                writer.close();
+                JOptionPane.showMessageDialog(null, "The file was saved successfully");
+            }
+            catch (IOException ioe) {
+                System.out.println("Couldn't write to file.");
+            }
+        }
+    }//GEN-LAST:event_jMenuItem20ActionPerformed
+
     public void outputPrint(String Text)
     {
         outputText.append(Text);
@@ -524,8 +678,8 @@ public class IDE extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu10;
     private javax.swing.JMenu jMenu2;
-    private javax.swing.JMenu jMenu3;
     private javax.swing.JMenu jMenu4;
     private javax.swing.JMenu jMenu5;
     private javax.swing.JMenu jMenu6;
@@ -542,7 +696,10 @@ public class IDE extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem15;
     private javax.swing.JMenuItem jMenuItem16;
     private javax.swing.JMenuItem jMenuItem17;
+    private javax.swing.JMenuItem jMenuItem18;
+    private javax.swing.JMenuItem jMenuItem19;
     private javax.swing.JMenuItem jMenuItem2;
+    private javax.swing.JMenuItem jMenuItem20;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JMenuItem jMenuItem5;
