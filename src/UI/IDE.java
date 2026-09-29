@@ -23,7 +23,7 @@ import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import models.Command;
 import models.SortedUniqueArrayList;
-import models.StaticVariables;
+import models.AppData;
 import utils.DateNTime;
 
 /**
@@ -420,7 +420,7 @@ public class IDE extends javax.swing.JFrame {
 
     private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
 
-        StaticVariables.continueTaskExecution = 1;
+        AppData.continueTaskExecution = 1;
         
         if(codeText.getText() != "")
         {
@@ -494,15 +494,15 @@ public class IDE extends javax.swing.JFrame {
     }//GEN-LAST:event_jCheckBoxMenuItem2ActionPerformed
 
     private void jMenuItem10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem10ActionPerformed
-        StaticVariables.continueTaskExecution = 0;
+        AppData.continueTaskExecution = 0;
     }//GEN-LAST:event_jMenuItem10ActionPerformed
 
     private void jMenuItem11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem11ActionPerformed
-        StaticVariables.continueTaskExecution = 1;
+        AppData.continueTaskExecution = 1;
     }//GEN-LAST:event_jMenuItem11ActionPerformed
 
     private void jMenuItem12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem12ActionPerformed
-        StaticVariables.continueTaskExecution = -1;
+        AppData.continueTaskExecution = -1;
     }//GEN-LAST:event_jMenuItem12ActionPerformed
 
     private void jMenuItem13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem13ActionPerformed

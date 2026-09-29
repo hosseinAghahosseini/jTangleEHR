@@ -11,7 +11,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import javax.swing.JTextArea;
 import utils.DateNTime;
-import models.StaticVariables;
+import models.AppData;
 
 /**
  * @author hosseinAghahosseini
@@ -27,6 +27,8 @@ public class Command {
     public long OccurrenceInterval;
     
     JTextArea outputStream = null;
+    
+    private static Random random = new Random();
     
     public Command(String text) throws Exception 
     {
@@ -147,14 +149,14 @@ public class Command {
         //Add EHR for a Random() user
         if(toFindUser.toLowerCase().contains("random("))
         {
-            Random r = new Random();
-            foundIndex = r.nextInt(StaticVariables.Users.size());
+            
+            foundIndex = random.nextInt(AppData.Users.size());
         }
         else //Add EHR for an specific user
         {
-            for(int j = 0; j < StaticVariables.Users.size(); j++)
+            for(int j = 0; j < AppData.Users.size(); j++)
             {
-                if(StaticVariables.Users.get(j).shortUserId.equals(toFindUser) || StaticVariables.Users.get(j).HashedPublicKey.equals(toFindUser))
+                if(AppData.Users.get(j).shortUserId.equals(toFindUser) || AppData.Users.get(j).HashedPublicKey.equals(toFindUser))
                 {
                     foundIndex = j;
                     break;
@@ -216,7 +218,7 @@ public class Command {
             this.Limit--;
             
             //check if the thread is disabled in UI
-            if(StaticVariables.continueTaskExecution == 0) //pause this thread
+            if(AppData.continueTaskExecution == 0) //pause this thread
             {
                 try
                 {
@@ -225,7 +227,7 @@ public class Command {
                 catch (Exception e) {}
                 return;
             }
-            else if (StaticVariables.continueTaskExecution == -1) //terminate this thread
+            else if (AppData.continueTaskExecution == -1) //terminate this thread
             {
                 outputPrintLine("Task " + commandStr + " is terminated.");
                 this.cancel();
@@ -249,15 +251,14 @@ public class Command {
 
                 if(command.length == 2) //a user variable is set
                 {
-                    boolean exists = StaticVariables.doesUserExist(command[0]);
+                    boolean exists = AppData.doesUserExist(command[0]);
                     if(!exists)
                     {
                         UserShortNameToTrickCompiler = command[0];
                     }
                     else
                     {
-                        Random r = new Random();
-                        UserShortNameToTrickCompiler = command[0] + "_" + String.valueOf(r.nextInt(0,99999));
+                        UserShortNameToTrickCompiler = command[0] + "_" + String.valueOf(random.nextInt(0,99999));
                     }
                     parameters = command[1].split(",");
                 }
@@ -310,7 +311,7 @@ public class Command {
                     u.setUserDetails(fName, lName, address, DateNTime.getDateFromParts(dateD, dateM, dateY));
 
                     //add user to the list
-                    StaticVariables.Users.add(u);       
+                    AppData.Users.add(u);       
                     u.createTangleForUser();
                     //outputPrint("User "+ u.HashedPublicKey + " has successfully initialized his Tangle.\n");
 
@@ -341,15 +342,15 @@ public class Command {
 
                 if(command.length == 2) //a node variable is set
                 {
-                    boolean exists = StaticVariables.doesNodeExist(command[0]);
+                    boolean exists = AppData.doesNodeExist(command[0]);
                     if(!exists)
                     {
                         NodeNameToTrickCompiler = command[0];
                     }
                     else //an already existing variable name was used, so we add something to its end
                     {
-                        Random r = new Random();
-                        NodeNameToTrickCompiler = command[0] + "_" + String.valueOf(r.nextInt(0,99999));
+                        NodeNameToTrickCompiler =
+                                command[0] + "_" + String.valueOf(random.nextInt(0,99999));
                     }
                     parameters = command[1].split(",");
                 }
@@ -372,11 +373,21 @@ public class Command {
                 }
 
                 //finding user
-                int foundIndex = findUserSearchIndexByUserIdString(parameters[0]);
+                int foundIndex = -1;
+                
+                //random user
+                if(parameters[0].toLowerCase().contains("random"))
+                {
+                    foundIndex = random.nextInt(AppData.Users.size());
+                }
+                else
+                {
+                    foundIndex = findUserSearchIndexByUserIdString(parameters[0]);
+                }
 
                 if(foundIndex >= 0)
                 {
-                    User4UI currentUserTemp = StaticVariables.Users.get(foundIndex);
+                    User4UI currentUserTemp = AppData.Users.get(foundIndex);
 
                     final User4UI currentUser = currentUserTemp;
 
@@ -397,7 +408,7 @@ public class Command {
                             {
                                 NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, "", "", "", "");
 
-                                outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar));                                      
+                                outputPrintLine(AppData.addNodeAndGetOutput(NodeId, NodeVar));                                      
                             }
                             catch(Exception er) {
                                 outputPrintLine(er.getMessage());
@@ -418,18 +429,18 @@ public class Command {
                             {
                                 NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, "", "", "", "");         
 
-                                outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                outputPrintLine(AppData.addNodeAndGetOutput(NodeId, NodeVar)); 
                             }
                             else if (currentUser.Role == User.UserRole.Doctor)
                             {
                                 //find patient to find the latest patientId
-                                var patient = StaticVariables.findUserFromList(parameters[3]);
+                                var patient = AppData.findUserFromList(parameters[3]);
                                 if(patient != null)
                                 {
                                     NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, "", ""); 
-                                    StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
+                                    AppData.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
 
-                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                    outputPrintLine(AppData.addNodeAndGetOutput(NodeId, NodeVar)); 
                                 }
                                 else
                                 {
@@ -452,18 +463,18 @@ public class Command {
                             {
 
                                 //find patient
-                                var patient = StaticVariables.findUserFromList(parameters[3]);
+                                var patient = AppData.findUserFromList(parameters[3]);
 
                                 //find doctor
-                                var doctor = StaticVariables.findUserFromList(parameters[4]);
+                                var doctor = AppData.findUserFromList(parameters[4]);
 
                                 if(patient != null && doctor != null)
                                 {
                                     NodeId = currentUser.addNodeToTangleAsHospital(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, doctor.MyPreviousNodeId, doctor.HashedPublicKey); 
-                                    StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
-                                    StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
+                                    AppData.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
+                                    AppData.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
 
-                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                    outputPrintLine(AppData.addNodeAndGetOutput(NodeId, NodeVar)); 
                                 }
                                 else
                                 {
@@ -474,13 +485,13 @@ public class Command {
                             else if (currentUser.Role == User.UserRole.Doctor)
                             {
                                 //find patient
-                                var patient = StaticVariables.findUserFromList(parameters[3]);
+                                var patient = AppData.findUserFromList(parameters[3]);
                                 if(patient != null)
                                 {
                                     NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, "", ""); 
-                                    StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
+                                    AppData.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
 
-                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                    outputPrintLine(AppData.addNodeAndGetOutput(NodeId, NodeVar)); 
                                 }
                                 else
                                 {
@@ -491,14 +502,14 @@ public class Command {
                             else if (currentUser.Role == User.UserRole.Patient)
                             {
                                 //find doctor
-                                var doctor = StaticVariables.findUserFromList(parameters[4]);
+                                var doctor = AppData.findUserFromList(parameters[4]);
 
                                 if(doctor != null)
                                 {
                                     NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, doctor.MyPreviousNodeId, doctor.HashedPublicKey, "", ""); 
-                                    StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
+                                    AppData.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
 
-                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                    outputPrintLine(AppData.addNodeAndGetOutput(NodeId, NodeVar)); 
                                 }
                                 else
                                 {
@@ -520,18 +531,18 @@ public class Command {
                             if(currentUser.Role == User.UserRole.Hospital)
                             {
                                 //find patient
-                                var patient = StaticVariables.findUserFromList(parameters[3]);
+                                var patient = AppData.findUserFromList(parameters[3]);
 
                                 //find doctor
-                                var doctor = StaticVariables.findUserFromList(parameters[4]);
+                                var doctor = AppData.findUserFromList(parameters[4]);
 
                                 if(patient != null && doctor != null)
                                 {
                                     NodeId = currentUser.addNodeToTangleAsHospital(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, doctor.MyPreviousNodeId, doctor.HashedPublicKey); 
-                                    StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
-                                    StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
+                                    AppData.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
+                                    AppData.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
 
-                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                    outputPrintLine(AppData.addNodeAndGetOutput(NodeId, NodeVar)); 
                                 }
                                 else
                                 {
@@ -542,18 +553,18 @@ public class Command {
                             else if (currentUser.Role == User.UserRole.Doctor)
                             {
                                 //find patient
-                                var patient = StaticVariables.findUserFromList(parameters[3]);
+                                var patient = AppData.findUserFromList(parameters[3]);
 
                                 //find hospital
-                                var hospital = StaticVariables.findUserFromList(parameters[5]);
+                                var hospital = AppData.findUserFromList(parameters[5]);
 
                                 if(patient != null && hospital != null)
                                 {
                                     NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, hospital.MyPreviousNodeId , hospital.HashedPublicKey); 
-                                    StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
-                                    StaticVariables.Users.get(hospital.userIndex).MyPreviousNodeId = NodeId;
+                                    AppData.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
+                                    AppData.Users.get(hospital.userIndex).MyPreviousNodeId = NodeId;
 
-                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                    outputPrintLine(AppData.addNodeAndGetOutput(NodeId, NodeVar)); 
                                 }
                                 else
                                 {
@@ -564,18 +575,18 @@ public class Command {
                             else if (currentUser.Role == User.UserRole.Patient)
                             {
                                 //find doctor
-                                var doctor = StaticVariables.findUserFromList(parameters[4]);
+                                var doctor = AppData.findUserFromList(parameters[4]);
 
                                 //find hospital
-                                var hospital = StaticVariables.findUserFromList(parameters[5]);
+                                var hospital = AppData.findUserFromList(parameters[5]);
 
                                 if(doctor != null && hospital != null)
                                 {
                                     NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, doctor.MyPreviousNodeId, doctor.HashedPublicKey, hospital.MyPreviousNodeId , hospital.HashedPublicKey); 
-                                    StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
-                                    StaticVariables.Users.get(hospital.userIndex).MyPreviousNodeId = NodeId;
+                                    AppData.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
+                                    AppData.Users.get(hospital.userIndex).MyPreviousNodeId = NodeId;
 
-                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                    outputPrintLine(AppData.addNodeAndGetOutput(NodeId, NodeVar)); 
                                 }
                                 else
                                 {
@@ -609,13 +620,13 @@ public class Command {
                 var parameters = commandStr.split(",");
                 if(parameters.length == 2)
                 {
-                    var simpleUser = StaticVariables.findUserFromList(parameters[0]);
+                    var simpleUser = AppData.findUserFromList(parameters[0]);
                     if(simpleUser != null)
                     {
-                        var user = StaticVariables.Users.get(simpleUser.userIndex);
+                        var user = AppData.Users.get(simpleUser.userIndex);
                         String NodeId = parameters[1];
 
-                        var SimpleNode = StaticVariables.findNodeFromList(NodeId);
+                        var SimpleNode = AppData.findNodeFromList(NodeId);
                         if(SimpleNode != null)
                         {
                             NodeId = SimpleNode.NodeId;
@@ -642,10 +653,10 @@ public class Command {
                 commandStr = sanitize(commandStr, "printTangle");
                 var parameters = commandStr.split(",");
 
-                var simpleUser = StaticVariables.findUserFromList(parameters[0]);
+                var simpleUser = AppData.findUserFromList(parameters[0]);
                 if(simpleUser != null)
                 {
-                    var user = StaticVariables.Users.get(simpleUser.userIndex);
+                    var user = AppData.Users.get(simpleUser.userIndex);
 
                     if(parameters.length == 1)
                     {
@@ -699,15 +710,16 @@ public class Command {
                 commandStr = Command.sanitize(commandStr, "advertiseTangle");
                 var parameters = commandStr.split(",");
                 
-                if(parameters.length == 0) //everyone advertise to everyone
+                if(parameters.length == 0 || commandStr.isBlank()) //everyone advertise to everyone
                 {
-                    for(var sender : StaticVariables.Users)
+                    for(var sender : AppData.Users)
                     {
-                        for(var receiver : StaticVariables.Users)
+                        for(var receiver : AppData.Users)
                         {
                             receiver.receiveTangleAndUpdateSelf(sender.advertiseTangle());
                         }
                     }
+                    outputPrintLine("Tangle advertisment (from evryone to all) was completed successfully.");
                     return;
                 }
                 
@@ -717,11 +729,11 @@ public class Command {
                     outputPrintLine("Error happened at advertiseTangle(). Sender user was not found.");
                     return;
                 }
-                var senderUser = StaticVariables.Users.get(senderId);
+                var senderUser = AppData.Users.get(senderId);
 
                 if(parameters.length == 1) //sender will advertise its tangle to all
                 {
-                    for(var receiver : StaticVariables.Users)
+                    for(var receiver : AppData.Users)
                     {
                         receiver.receiveTangleAndUpdateSelf(senderUser.advertiseTangle());
                     }
@@ -731,7 +743,7 @@ public class Command {
                 {
                     if(parameters[1].isBlank()) //same as advertise to all
                     {
-                        for(var receiver : StaticVariables.Users)
+                        for(var receiver : AppData.Users)
                         {
                             receiver.receiveTangleAndUpdateSelf(senderUser.advertiseTangle());
                         }
@@ -744,7 +756,7 @@ public class Command {
                             outputPrintLine("Error happened at advertiseTangle(). Receiver user was not found.");
                             return;
                         }
-                        var receiverUser = StaticVariables.Users.get(receiverId);
+                        var receiverUser = AppData.Users.get(receiverId);
                         receiverUser.receiveTangleAndUpdateSelf(senderUser.advertiseTangle());
                     }
                     outputPrintLine("Tangle advertisment was completed successfully by User ["+ parameters[0] + "].");
@@ -759,30 +771,29 @@ public class Command {
             {
                 commandStr = Command.sanitize(commandStr, "setTangle");
                 var parameters = commandStr.split(",");
-                var sender = StaticVariables.findUserFromList(parameters[0]);
+                var sender = AppData.findUserFromList(parameters[0]);
                 if(sender == null)
                 {
                     outputPrintLine("Error happened at initializeTangle(). User was not found.");
                     return;
                 }
-                var senderUser = StaticVariables.Users.get(sender.userIndex);
+                var senderUser = AppData.Users.get(sender.userIndex);
 
                 if(parameters.length == 2)
                 {
                     if(parameters[1].toLowerCase().equals("random"))
                     {
-                        Random r = new Random();
                         //setting user's tangle according to a random user's tangle
                         //senderUser.MyTangle.DAG = StaticVariables.Users.get(r.nextInt(0, StaticVariables.Users.size())).MyTangle.DAG;
-                        int RandomId = r.nextInt(0, StaticVariables.Users.size());
-                        senderUser.MyTangle.SetTangleClone(StaticVariables.Users.get(RandomId).MyTangle.DAG);
+                        int RandomId = random.nextInt(0, AppData.Users.size());
+                        senderUser.MyTangle.SetTangleClone(AppData.Users.get(RandomId).MyTangle.DAG);
                     }
                     else //all
                     {
                         ArrayList<ArrayList<Node>> dags = new ArrayList();
-                        for(int i = StaticVariables.Users.size() - 1; i >= 0; i--)
+                        for(int i = AppData.Users.size() - 1; i >= 0; i--)
                         {
-                            dags.add(StaticVariables.Users.get(i).MyTangle.DAG);
+                            dags.add(AppData.Users.get(i).MyTangle.DAG);
                         }
                         //senderUser.MyTangle.DAG = Tangle.selectBestTangle(dags);
                         senderUser.MyTangle.SetTangleClone(Tangle.selectBestTangle(dags));
@@ -802,25 +813,24 @@ public class Command {
                         }
                         ArrayList<ArrayList<Node>> dags = new ArrayList();
                         
-                        if(startIndex >= 0 || startIndex + limit < StaticVariables.Users.size())
+                        if(startIndex >= 0 || startIndex + limit < AppData.Users.size())
                         {
                             if(!isRandom)
                             {
                                 for(int i = startIndex; i < startIndex + limit; i++)
                                 {
-                                    dags.add(StaticVariables.Users.get(i).MyTangle.DAG);
+                                    dags.add(AppData.Users.get(i).MyTangle.DAG);
                                 }
                             }
                             else
                             {
                                 ArrayList<Integer> selectedIndexes = new ArrayList();
-                                Random r = new Random();
-                                for(int i = startIndex; i < StaticVariables.Users.size(); i++)
+                                for(int i = startIndex; i < AppData.Users.size(); i++)
                                 {
-                                    int randomInt = r.nextInt(i, StaticVariables.Users.size());
+                                    int randomInt = random.nextInt(i, AppData.Users.size());
                                     if(!selectedIndexes.contains(randomInt))
                                     {
-                                       dags.add(StaticVariables.Users.get(i).MyTangle.DAG);
+                                       dags.add(AppData.Users.get(i).MyTangle.DAG);
                                        selectedIndexes.add(i);
                                        limit--;
                                        if(limit == 0) break;
@@ -861,10 +871,10 @@ public class Command {
                         if(command.length == 1) 
                         {
                             int limit = Integer.parseInt(command[0]);
-                            if(limit >= StaticVariables.Users.size()) limit = StaticVariables.Users.size();
+                            if(limit >= AppData.Users.size()) limit = AppData.Users.size();
                             for(int i = 0; i < limit; i++)
                             {
-                                Output += "{\"" + StaticVariables.Users.get(i).shortUserId + ", " + StaticVariables.Users.get(i).Role.toString() + "\"}\n";
+                                Output += "{\"" + AppData.Users.get(i).shortUserId + ", " + AppData.Users.get(i).Role.toString() + "\"}\n";
                                 if(i != limit - 1)
                                 {
                                     Output += ", ";
@@ -877,12 +887,12 @@ public class Command {
                             
                             if(command[1].toLowerCase().equals("false"))
                             {
-                                limit = StaticVariables.Users.size() - limit;
+                                limit = AppData.Users.size() - limit;
                                 if(limit < 0) limit = 0;
 
-                                for(int i = StaticVariables.Users.size() - 1; i >= limit; i--)
+                                for(int i = AppData.Users.size() - 1; i >= limit; i--)
                                 {
-                                    Output += "{\"" + StaticVariables.Users.get(i).shortUserId + ", " + StaticVariables.Users.get(i).Role.toString() + "\"}\n";
+                                    Output += "{\"" + AppData.Users.get(i).shortUserId + ", " + AppData.Users.get(i).Role.toString() + "\"}\n";
                                     if(i != limit)
                                     {
                                         Output += ", ";
@@ -891,10 +901,10 @@ public class Command {
                             }
                             else
                             {
-                                if(limit >= StaticVariables.Users.size()) limit = StaticVariables.Users.size();
+                                if(limit >= AppData.Users.size()) limit = AppData.Users.size();
                                 for(int i = 0; i < limit; i++)
                                 {
-                                    Output += "{\"" + StaticVariables.Users.get(i).shortUserId + ", " + StaticVariables.Users.get(i).Role.toString() + "\"}\n";
+                                    Output += "{\"" + AppData.Users.get(i).shortUserId + ", " + AppData.Users.get(i).Role.toString() + "\"}\n";
                                     if(i != limit - 1)
                                     {
                                         Output += ", ";
@@ -916,15 +926,15 @@ public class Command {
                 }
                 else
                 {
-                    for(int i = 0; i < StaticVariables.Users.size(); i++)
+                    for(int i = 0; i < AppData.Users.size(); i++)
                     {
                         if(i != 0)
                         {
-                            Output += ", \"" + StaticVariables.Users.get(i).shortUserId + "\"";
+                            Output += ", \"" + AppData.Users.get(i).shortUserId + "\"";
                         }
                         else
                         {
-                            Output += "\"" + StaticVariables.Users.get(i).shortUserId + "\"";
+                            Output += "\"" + AppData.Users.get(i).shortUserId + "\"";
                         }
                     }   
                 }
@@ -943,10 +953,10 @@ public class Command {
                         if(command.length == 1) 
                         {
                             int limit = Integer.parseInt(command[0]);
-                            if(limit >= StaticVariables.Nodes.size()) limit = StaticVariables.Nodes.size();
+                            if(limit >= AppData.Nodes.size()) limit = AppData.Nodes.size();
                             for(int i = 0; i < limit; i++)
                             {
-                                Output += "\"" + StaticVariables.Nodes.get(i).shortNodeId + "\"";
+                                Output += "\"" + AppData.Nodes.get(i).shortNodeId + "\"";
                                 if(i != limit - 1)
                                 {
                                     Output += ", ";
@@ -959,12 +969,12 @@ public class Command {
                             
                             if(command[1].toLowerCase().equals("false"))
                             {
-                                limit = StaticVariables.Users.size() - limit;
+                                limit = AppData.Users.size() - limit;
                                 if(limit < 0) limit = 0;
 
-                                for(int i = StaticVariables.Nodes.size() - 1; i >= limit; i--)
+                                for(int i = AppData.Nodes.size() - 1; i >= limit; i--)
                                 {
-                                    Output += "\"" + StaticVariables.Nodes.get(i).shortNodeId + "\"";
+                                    Output += "\"" + AppData.Nodes.get(i).shortNodeId + "\"";
                                     if(i != limit)
                                     {
                                         Output += ", ";
@@ -973,10 +983,10 @@ public class Command {
                             }
                             else
                             {
-                                if(limit >= StaticVariables.Nodes.size()) limit = StaticVariables.Nodes.size();
+                                if(limit >= AppData.Nodes.size()) limit = AppData.Nodes.size();
                                 for(int i = 0; i < limit; i++)
                                 {
-                                    Output += "\"" + StaticVariables.Nodes.get(i).shortNodeId + "\"";
+                                    Output += "\"" + AppData.Nodes.get(i).shortNodeId + "\"";
                                     if(i != limit - 1)
                                     {
                                         Output += ", ";
@@ -998,15 +1008,15 @@ public class Command {
                 }
                 else
                 {
-                    for(int i = 0; i < StaticVariables.Nodes.size(); i++)
+                    for(int i = 0; i < AppData.Nodes.size(); i++)
                     {
                         if(i != 0)
                         {
-                            Output += ", \"" + StaticVariables.Nodes.get(i).shortNodeId + "\"";
+                            Output += ", \"" + AppData.Nodes.get(i).shortNodeId + "\"";
                         }
                         else
                         {
-                            Output += "\"" + StaticVariables.Nodes.get(i).shortNodeId + "\"";
+                            Output += "\"" + AppData.Nodes.get(i).shortNodeId + "\"";
                         }
                     }   
                 }

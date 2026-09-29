@@ -10,7 +10,7 @@ import java.util.ArrayList;
  * @author hosseinAghahosseini
  */
 
-public class StaticVariables {
+public class AppData {
     
     public static ArrayList<User4UI> Users = new ArrayList<>();
     public static ArrayList<SimpleNode> Nodes = new ArrayList<>();
