@@ -71,8 +71,8 @@ public class Node {
     public String DigitalSignature;
     
     //Checking Varriables
-    short state = 0;
-    short visited = 0;
+    short state = 0; //to check if its dag
+    short visited = 0; //for weight calculation
     
     public Node() { }
     
@@ -116,6 +116,7 @@ public class Node {
         this.DigitalSignature = other.DigitalSignature;
 
         this.state = other.state;
+        this.visited = other.visited;
     }
     
     public Node(Node other, String decryptedEHR) 

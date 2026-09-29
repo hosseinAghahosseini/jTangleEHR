@@ -1,17 +1,36 @@
 package entities;
 
 import crypto.HashAndSign;
+import java.security.SecureRandom;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.Set;
+import java.util.TreeSet;
 import models.NodePair;
 import models.NodeWeight;
+import models.SortedUniqueArrayList;
 
 /**
  * @author hosseinAghahosseini
  */
 
 public class Tangle {
+    
+    /**
+     *  alpha is the tuning factor in MCMC random walk
+     *  if alpha is set to 0, candidate nodes have the same chance regardless of their weight
+     *  the bigger the alpha, the more biased the algorithm is for heavier nodes
+    */
+    public static final double alpha = 0.4;   
+    /**
+     *  beta is another factor that penalizes following the same path in MCMC random walk
+     *  if set to 1, there is no penalty
+     *  the smaller the beta, the more diverse the path
+    */
+    public static final double beta = 0.7;
+    
+    SecureRandom srandom = new SecureRandom();
     
     public ArrayList<Node> DAG;
     
@@ -155,38 +174,91 @@ public class Tangle {
     
     public ArrayList<Node> selectTipNodes() //temporary to make app work
     {
-        ArrayList<Node> Tips = new ArrayList<>();
-        
-        for(int i = DAG.size() - 1; i >= 0 ; i--)
-        {
-            if(DAG.get(i).NodeId != null)
-            {
-                Tips.add(DAG.get(i));              
-            }
-            if(Tips.size() >= 2)
-                break;
-        }
-        return Tips;
+        return selectTipNodesMCMC();
     }
     
     public ArrayList<Node> selectTipNodesMCMC() //todo continue implementing tip selection algorithm
     {
-        if(DAG == null || DAG.isEmpty() || DAG.size() < 10)
+        if(DAG == null || DAG.isEmpty() || DAG.size() < 7)
             return selectTipNodesSimple();
         
         ArrayList<Node> Tips = new ArrayList<>();
-        
+        Set<String> Path = new TreeSet<>();
+        //SortedUniqueArrayList Path = new SortedUniqueArrayList();
+
         //start at a milestone node (or genesis at start)
-        Node milestone = DAG.get(0); //genesis
-        if(milestone == null) return null;
+        Node currentNode = GetMilestoneNode(); //genesis
+        if(currentNode == null) return null;
         
-        //monte carlo markov chain random walk (walk through the edge nodes with weigh bias)
-        var canditateNextDestinationNodes = findNodesThatAcceptsAnother(milestone.NodeId);
-        
-        //choosing the next node according to cumulative weight
-        
+        while(Tips.size() < 2)
+        {
+            //monte carlo markov chain random walk (walk through the edge nodes with weigh bias)
+            var canditateNextDestinationNodes = findNodesThatAcceptsAnother(currentNode.NodeId);
+
+            if(canditateNextDestinationNodes.isEmpty()) //we found a tip
+            {
+                boolean foundTheSameTip = false;
+                for(var tip : Tips)
+                {
+                    if(tip.NodeId.equals(currentNode.NodeId))
+                    {
+                        foundTheSameTip = true;
+                        break;
+                    }
+                }
+                if(!foundTheSameTip) Tips.add(new Node(currentNode));
+                currentNode = GetMilestoneNode();
+                continue;
+            }
+
+            //choosing the next node according to cumulative weight
+
+            double sum = 0;
+            int size = canditateNextDestinationNodes.size();
+            double[] probabilityList = new double[size];
+
+            // (e ^ a.w) / Sum (e ^ a.w) for all nodes
+            for(int i = 0; i < size; i++)
+            {
+                var candid = canditateNextDestinationNodes.get(i);
+                var weight = (double) candid.CumulativeWeight;
+                
+                //to punish revisiting previously visited nodes (and to find paths to tips)
+                double diversityMultiplier = 1;
+                if( (!Tips.isEmpty()) && Path.contains(candid.NodeId))
+                    diversityMultiplier = beta;              
+                
+                //original tangle 1.0 formula + our beta path diversity multiplier
+                var temp = Math.exp(alpha * weight * diversityMultiplier);
+                probabilityList[i] = temp;
+                sum += temp;
+            }
+
+            double randomResult = srandom.nextDouble();
+            double sumOfProb = 0;
+            for(int i = 0; i < size; i++)
+            {
+                probabilityList[i] = probabilityList[i] / sum;
+                sumOfProb += probabilityList[i];
+                if(randomResult <= sumOfProb)
+                {
+                    currentNode = canditateNextDestinationNodes.get(i); //next node is found
+                    Path.add(currentNode.NodeId);
+                    break;
+                }
+            }
+        }
         
         return Tips;
+    }
+    
+    public Node GetMilestoneNode()
+    {
+        if(!DAG.isEmpty())
+        {
+            return DAG.get(0);
+        }      
+        return null;
     }
     
     public static boolean hasCycle(ArrayList<Node> Nodes)

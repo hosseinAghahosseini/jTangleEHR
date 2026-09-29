@@ -370,237 +370,235 @@ public class Command {
                     outputPrintLine("Command createEHR() is incomplete");
                     return;
                 }
-                else 
+
+                //finding user
+                int foundIndex = findUserSearchIndexByUserIdString(parameters[0]);
+
+                if(foundIndex >= 0)
                 {
-                    //finding user
-                    int foundIndex = findUserSearchIndexByUserIdString(parameters[0]);
-                    
-                    if(foundIndex >= 0)
+                    User4UI currentUserTemp = StaticVariables.Users.get(foundIndex);
+
+                    final User4UI currentUser = currentUserTemp;
+
+                    boolean encryptEHR = false;
+                    if(parameters[2].contains("true"))
                     {
-                        User4UI currentUserTemp = StaticVariables.Users.get(foundIndex);
+                        encryptEHR = true;
+                    }
+                    //final int finalIndex = foundIndex;
+                    final boolean finalEncryptEHR = encryptEHR;
+                    String NodeId = "";
 
-                        final User4UI currentUser = currentUserTemp;
-
-                        boolean encryptEHR = false;
-                        if(parameters[2].contains("true"))
+                    if(parameters.length == 3)
+                    {
+                        if(currentUser.Role == User.UserRole.Patient)
                         {
-                            encryptEHR = true;
-                        }
-                        //final int finalIndex = foundIndex;
-                        final boolean finalEncryptEHR = encryptEHR;
-                        String NodeId = "";
+                            try 
+                            {
+                                NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, "", "", "", "");
 
-                        if(parameters.length == 3)
+                                outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar));                                      
+                            }
+                            catch(Exception er) {
+                                outputPrintLine(er.getMessage());
+                                return;
+                            }  
+                        }
+                        else
+                        {
+                            outputPrintLine("Command createEHR() is incomplete");
+                            return;
+                        }                          
+                    }
+                    else if (parameters.length == 4)
+                    {
+                        try 
                         {
                             if(currentUser.Role == User.UserRole.Patient)
                             {
-                                try 
-                                {
-                                    NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, "", "", "", "");
-                                    
-                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar));                                      
-                                }
-                                catch(Exception er) {
-                                    outputPrintLine(er.getMessage());
-                                    return;
-                                }  
+                                NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, "", "", "", "");         
+
+                                outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
                             }
-                            else
+                            else if (currentUser.Role == User.UserRole.Doctor)
                             {
-                                outputPrintLine("Command createEHR() is incomplete");
-                                return;
-                            }                          
-                        }
-                        else if (parameters.length == 4)
-                        {
-                            try 
-                            {
-                                if(currentUser.Role == User.UserRole.Patient)
+                                //find patient to find the latest patientId
+                                var patient = StaticVariables.findUserFromList(parameters[3]);
+                                if(patient != null)
                                 {
-                                    NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, "", "", "", "");         
+                                    NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, "", ""); 
+                                    StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
 
                                     outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
                                 }
-                                else if (currentUser.Role == User.UserRole.Doctor)
+                                else
                                 {
-                                    //find patient to find the latest patientId
-                                    var patient = StaticVariables.findUserFromList(parameters[3]);
-                                    if(patient != null)
-                                    {
-                                        NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, "", ""); 
-                                        StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
-
-                                        outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
-                                    }
-                                    else
-                                    {
-                                        outputPrintLine("Error happened at Command createEHR(). Patient was not found.");
-                                        return;
-                                    }
-                                }
-
-                            }
-                            catch(Exception er) {
-                                outputPrintLine(er.getMessage());
-                                return;
-                            }  
-                        }
-                        else if (parameters.length == 5)
-                        {
-                            try 
-                            {
-                                if(currentUser.Role == User.UserRole.Hospital)
-                                {
-
-                                    //find patient
-                                    var patient = StaticVariables.findUserFromList(parameters[3]);
-
-                                    //find doctor
-                                    var doctor = StaticVariables.findUserFromList(parameters[4]);
-
-                                    if(patient != null && doctor != null)
-                                    {
-                                        NodeId = currentUser.addNodeToTangleAsHospital(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, doctor.MyPreviousNodeId, doctor.HashedPublicKey); 
-                                        StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
-                                        StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
-
-                                        outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
-                                    }
-                                    else
-                                    {
-                                        outputPrintLine("Error happened at Command createEHR(). Patient/Doctor is not found.");
-                                        return;
-                                    }
-                                }
-                                else if (currentUser.Role == User.UserRole.Doctor)
-                                {
-                                    //find patient
-                                    var patient = StaticVariables.findUserFromList(parameters[3]);
-                                    if(patient != null)
-                                    {
-                                        NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, "", ""); 
-                                        StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
-
-                                        outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
-                                    }
-                                    else
-                                    {
-                                        outputPrintLine("Error happened at Command createEHR(). Patient is not found.");
-                                        return;
-                                    }
-                                }
-                                else if (currentUser.Role == User.UserRole.Patient)
-                                {
-                                    //find doctor
-                                    var doctor = StaticVariables.findUserFromList(parameters[4]);
-
-                                    if(doctor != null)
-                                    {
-                                        NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, doctor.MyPreviousNodeId, doctor.HashedPublicKey, "", ""); 
-                                        StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
-
-                                        outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
-                                    }
-                                    else
-                                    {
-                                        outputPrintLine("Error happened at Command createEHR(). Doctor is not found.");
-                                        return;
-                                    }
-                                }
-
-                            }
-                            catch(Exception er) {
-                                outputPrintLine(er.getMessage());
-                                return;
-                            }  
-                        }
-                        else if (parameters.length == 6)
-                        {
-                            try 
-                            {
-                                if(currentUser.Role == User.UserRole.Hospital)
-                                {
-                                    //find patient
-                                    var patient = StaticVariables.findUserFromList(parameters[3]);
-
-                                    //find doctor
-                                    var doctor = StaticVariables.findUserFromList(parameters[4]);
-
-                                    if(patient != null && doctor != null)
-                                    {
-                                        NodeId = currentUser.addNodeToTangleAsHospital(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, doctor.MyPreviousNodeId, doctor.HashedPublicKey); 
-                                        StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
-                                        StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
-
-                                        outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
-                                    }
-                                    else
-                                    {
-                                        outputPrintLine("Error happened at Command createEHR(). Patient/Doctor is not found.");
-                                        return;
-                                    }
-                                }
-                                else if (currentUser.Role == User.UserRole.Doctor)
-                                {
-                                    //find patient
-                                    var patient = StaticVariables.findUserFromList(parameters[3]);
-
-                                    //find hospital
-                                    var hospital = StaticVariables.findUserFromList(parameters[5]);
-
-                                    if(patient != null && hospital != null)
-                                    {
-                                        NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, hospital.MyPreviousNodeId , hospital.HashedPublicKey); 
-                                        StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
-                                        StaticVariables.Users.get(hospital.userIndex).MyPreviousNodeId = NodeId;
-
-                                        outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
-                                    }
-                                    else
-                                    {
-                                        outputPrintLine("Error happened at Command createEHR(). Patient is not found.");
-                                        return;
-                                    }
-                                }
-                                else if (currentUser.Role == User.UserRole.Patient)
-                                {
-                                    //find doctor
-                                    var doctor = StaticVariables.findUserFromList(parameters[4]);
-
-                                    //find hospital
-                                    var hospital = StaticVariables.findUserFromList(parameters[5]);
-
-                                    if(doctor != null && hospital != null)
-                                    {
-                                        NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, doctor.MyPreviousNodeId, doctor.HashedPublicKey, hospital.MyPreviousNodeId , hospital.HashedPublicKey); 
-                                        StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
-                                        StaticVariables.Users.get(hospital.userIndex).MyPreviousNodeId = NodeId;
-
-                                        outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
-                                    }
-                                    else
-                                    {
-                                        outputPrintLine("Error happened at Command createEHR(). Doctor is not found.");
-                                        return;
-                                    }
+                                    outputPrintLine("Error happened at Command createEHR(). Patient was not found.");
+                                    return;
                                 }
                             }
-                            catch(Exception er) {
-                                outputPrintLine(er.getMessage());
-                                return;
-                            }  
-                        }
-                        
-                        //set new cumulative weights after we added a node
-                        currentUser.calculateCumulativeWeightsAfterAddingANode(NodeId);
 
-                        //StaticVariables.Users.get(foundIndex).addNodeToTangle(NodeName, rootPaneCheckingEnabled, toFindUser, toFindUser, toFindUser, toFindUser, toFindUser, toFindUser)
+                        }
+                        catch(Exception er) {
+                            outputPrintLine(er.getMessage());
+                            return;
+                        }  
                     }
-                    else
+                    else if (parameters.length == 5)
                     {
-                        outputPrintLine("In createEHR(), User " + parameters[0] + " was not found");
-                        return;
+                        try 
+                        {
+                            if(currentUser.Role == User.UserRole.Hospital)
+                            {
+
+                                //find patient
+                                var patient = StaticVariables.findUserFromList(parameters[3]);
+
+                                //find doctor
+                                var doctor = StaticVariables.findUserFromList(parameters[4]);
+
+                                if(patient != null && doctor != null)
+                                {
+                                    NodeId = currentUser.addNodeToTangleAsHospital(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, doctor.MyPreviousNodeId, doctor.HashedPublicKey); 
+                                    StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
+                                    StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
+
+                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                }
+                                else
+                                {
+                                    outputPrintLine("Error happened at Command createEHR(). Patient/Doctor is not found.");
+                                    return;
+                                }
+                            }
+                            else if (currentUser.Role == User.UserRole.Doctor)
+                            {
+                                //find patient
+                                var patient = StaticVariables.findUserFromList(parameters[3]);
+                                if(patient != null)
+                                {
+                                    NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, "", ""); 
+                                    StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
+
+                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                }
+                                else
+                                {
+                                    outputPrintLine("Error happened at Command createEHR(). Patient is not found.");
+                                    return;
+                                }
+                            }
+                            else if (currentUser.Role == User.UserRole.Patient)
+                            {
+                                //find doctor
+                                var doctor = StaticVariables.findUserFromList(parameters[4]);
+
+                                if(doctor != null)
+                                {
+                                    NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, doctor.MyPreviousNodeId, doctor.HashedPublicKey, "", ""); 
+                                    StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
+
+                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                }
+                                else
+                                {
+                                    outputPrintLine("Error happened at Command createEHR(). Doctor is not found.");
+                                    return;
+                                }
+                            }
+
+                        }
+                        catch(Exception er) {
+                            outputPrintLine(er.getMessage());
+                            return;
+                        }  
                     }
+                    else if (parameters.length == 6)
+                    {
+                        try 
+                        {
+                            if(currentUser.Role == User.UserRole.Hospital)
+                            {
+                                //find patient
+                                var patient = StaticVariables.findUserFromList(parameters[3]);
+
+                                //find doctor
+                                var doctor = StaticVariables.findUserFromList(parameters[4]);
+
+                                if(patient != null && doctor != null)
+                                {
+                                    NodeId = currentUser.addNodeToTangleAsHospital(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, doctor.MyPreviousNodeId, doctor.HashedPublicKey); 
+                                    StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
+                                    StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
+
+                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                }
+                                else
+                                {
+                                    outputPrintLine("Error happened at Command createEHR(). Patient/Doctor is not found.");
+                                    return;
+                                }
+                            }
+                            else if (currentUser.Role == User.UserRole.Doctor)
+                            {
+                                //find patient
+                                var patient = StaticVariables.findUserFromList(parameters[3]);
+
+                                //find hospital
+                                var hospital = StaticVariables.findUserFromList(parameters[5]);
+
+                                if(patient != null && hospital != null)
+                                {
+                                    NodeId = currentUser.addNodeToTangleAsDoctor(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, patient.MyPreviousNodeId, patient.HashedPublicKey, hospital.MyPreviousNodeId , hospital.HashedPublicKey); 
+                                    StaticVariables.Users.get(patient.userIndex).MyPreviousNodeId = NodeId;
+                                    StaticVariables.Users.get(hospital.userIndex).MyPreviousNodeId = NodeId;
+
+                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                }
+                                else
+                                {
+                                    outputPrintLine("Error happened at Command createEHR(). Patient is not found.");
+                                    return;
+                                }
+                            }
+                            else if (currentUser.Role == User.UserRole.Patient)
+                            {
+                                //find doctor
+                                var doctor = StaticVariables.findUserFromList(parameters[4]);
+
+                                //find hospital
+                                var hospital = StaticVariables.findUserFromList(parameters[5]);
+
+                                if(doctor != null && hospital != null)
+                                {
+                                    NodeId = currentUser.addNodeToTangleAsPatient(resetIfRandomized(parameters[1],"ehr"), finalEncryptEHR, doctor.MyPreviousNodeId, doctor.HashedPublicKey, hospital.MyPreviousNodeId , hospital.HashedPublicKey); 
+                                    StaticVariables.Users.get(doctor.userIndex).MyPreviousNodeId = NodeId;
+                                    StaticVariables.Users.get(hospital.userIndex).MyPreviousNodeId = NodeId;
+
+                                    outputPrintLine(StaticVariables.addNodeAndGetOutput(NodeId, NodeVar)); 
+                                }
+                                else
+                                {
+                                    outputPrintLine("Error happened at Command createEHR(). Doctor is not found.");
+                                    return;
+                                }
+                            }
+                        }
+                        catch(Exception er) {
+                            outputPrintLine(er.getMessage());
+                            return;
+                        }  
+                    }
+
+                    //set new cumulative weights after we added a node
+                    currentUser.calculateCumulativeWeightsAfterAddingANode(NodeId);
+
+                    //StaticVariables.Users.get(foundIndex).addNodeToTangle(NodeName, rootPaneCheckingEnabled, toFindUser, toFindUser, toFindUser, toFindUser, toFindUser, toFindUser)
+                }
+                else
+                {
+                    outputPrintLine("In createEHR(), User " + parameters[0] + " was not found");
+                    return;
                 }
 
             }
@@ -700,6 +698,19 @@ public class Command {
             {
                 commandStr = Command.sanitize(commandStr, "advertiseTangle");
                 var parameters = commandStr.split(",");
+                
+                if(parameters.length == 0) //everyone advertise to everyone
+                {
+                    for(var sender : StaticVariables.Users)
+                    {
+                        for(var receiver : StaticVariables.Users)
+                        {
+                            receiver.receiveTangleAndUpdateSelf(sender.advertiseTangle());
+                        }
+                    }
+                    return;
+                }
+                
                 int senderId = findUserSearchIndexByUserIdString(parameters[0]);
                 if(senderId < 0)
                 {
@@ -710,9 +721,9 @@ public class Command {
 
                 if(parameters.length == 1) //sender will advertise its tangle to all
                 {
-                    for(int i = 0; i < StaticVariables.Users.size(); i++)
+                    for(var receiver : StaticVariables.Users)
                     {
-                        StaticVariables.Users.get(i).receiveTangleAndUpdateSelf(senderUser.advertiseTangle());
+                        receiver.receiveTangleAndUpdateSelf(senderUser.advertiseTangle());
                     }
                     outputPrintLine("Tangle advertisment (to all) was completed successfully by User ["+ parameters[0] + "].");
                 }
@@ -720,9 +731,9 @@ public class Command {
                 {
                     if(parameters[1].isBlank()) //same as advertise to all
                     {
-                        for(int i = 0; i < StaticVariables.Users.size(); i++)
+                        for(var receiver : StaticVariables.Users)
                         {
-                            StaticVariables.Users.get(i).receiveTangleAndUpdateSelf(senderUser.advertiseTangle());
+                            receiver.receiveTangleAndUpdateSelf(senderUser.advertiseTangle());
                         }
                     }
                     else

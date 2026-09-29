@@ -22,6 +22,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import models.Command;
+import models.SortedUniqueArrayList;
 import models.StaticVariables;
 import utils.DateNTime;
 
@@ -83,6 +84,7 @@ public class IDE extends javax.swing.JFrame {
         jMenuItem4 = new javax.swing.JMenuItem();
         jMenuItem9 = new javax.swing.JMenuItem();
         jMenuItem13 = new javax.swing.JMenuItem();
+        jMenuItem21 = new javax.swing.JMenuItem();
         jMenu10 = new javax.swing.JMenu();
         jMenuItem6 = new javax.swing.JMenuItem();
         jMenuItem5 = new javax.swing.JMenuItem();
@@ -315,6 +317,14 @@ public class IDE extends javax.swing.JFrame {
         });
         jMenu5.add(jMenuItem13);
 
+        jMenuItem21.setText("setMilestone");
+        jMenuItem21.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem21ActionPerformed(evt);
+            }
+        });
+        jMenu5.add(jMenuItem21);
+
         jMenu10.setText("Print");
 
         jMenuItem6.setText("printTangle");
@@ -470,7 +480,7 @@ public class IDE extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem8ActionPerformed
 
     private void jMenuItem9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem9ActionPerformed
-        inputPrint("//Sender user advertises its Tangle to receiver;\n//If the receiver parameter is left empty or is not provided, the sender will advertise its Tanlge to all other users;\nadvertiseTangle(\"sender\", \"receiver\");\n");
+        inputPrint("//Sender user advertises its Tangle to receiver;\n//If the receiver parameter is left empty or is not provided, the sender will advertise its Tanlge to all other users;\n//If no parameter is provided, everyone will advertise to others;\nadvertiseTangle(\"sender\", \"receiver\");\n");
     }//GEN-LAST:event_jMenuItem9ActionPerformed
 
     private void jCheckBoxMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxMenuItem1ActionPerformed
@@ -626,6 +636,32 @@ public class IDE extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jMenuItem20ActionPerformed
 
+    private void jMenuItem21ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem21ActionPerformed
+        SortedUniqueArrayList list = new SortedUniqueArrayList();
+        list.add("123");
+        list.add("456");
+        list.add("124");
+        list.add("121");
+        list.add("123");
+        list.add("127");
+        list.add("678");
+        //list.remove("124");
+        //list.removeAt(3);
+        outputPrintLine(String.valueOf(list.exists("120")));
+        outputPrintLine(String.valueOf(list.exists("121")));
+        outputPrintLine(String.valueOf(list.exists("123")));
+        outputPrintLine(String.valueOf(list.exists("124")));
+        outputPrintLine(String.valueOf(list.exists("125")));
+        outputPrintLine(String.valueOf(list.exists("677")));
+        outputPrintLine(String.valueOf(list.exists("678")));
+        outputPrintLine(String.valueOf(list.exists("679")));
+        
+        for(var lis : list.getList())
+        {
+            outputPrintLine(lis);
+        }
+    }//GEN-LAST:event_jMenuItem21ActionPerformed
+
     public void outputPrint(String Text)
     {
         outputText.append(Text);
@@ -700,6 +736,7 @@ public class IDE extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem19;
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem20;
+    private javax.swing.JMenuItem jMenuItem21;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JMenuItem jMenuItem5;
