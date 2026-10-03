@@ -88,6 +88,7 @@ public class IDE extends javax.swing.JFrame {
         jMenu10 = new javax.swing.JMenu();
         jMenuItem6 = new javax.swing.JMenuItem();
         jMenuItem5 = new javax.swing.JMenuItem();
+        jMenuItem22 = new javax.swing.JMenuItem();
         jMenu9 = new javax.swing.JMenu();
         jMenuItem16 = new javax.swing.JMenuItem();
         jMenuItem17 = new javax.swing.JMenuItem();
@@ -342,6 +343,14 @@ public class IDE extends javax.swing.JFrame {
             }
         });
         jMenu10.add(jMenuItem5);
+
+        jMenuItem22.setText("visualizeTangle");
+        jMenuItem22.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem22ActionPerformed(evt);
+            }
+        });
+        jMenu10.add(jMenuItem22);
 
         jMenu5.add(jMenu10);
 
@@ -662,6 +671,10 @@ public class IDE extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jMenuItem21ActionPerformed
 
+    private void jMenuItem22ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem22ActionPerformed
+        inputPrint("//Shows a graphical view of a user's Tangle;\n//onlyShowMyEhr should be true or false\n//limit should be a positive integer, otherwise it will show all the EHR nodes of a tangle;\nvisualizeTangle(\"user\", onlyShowMyEhr, \"limit\");\n");
+    }//GEN-LAST:event_jMenuItem22ActionPerformed
+
     public void outputPrint(String Text)
     {
         outputText.append(Text);
@@ -737,6 +750,7 @@ public class IDE extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem20;
     private javax.swing.JMenuItem jMenuItem21;
+    private javax.swing.JMenuItem jMenuItem22;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JMenuItem jMenuItem5;

@@ -47,10 +47,11 @@ public class DecryptedNode extends Node {
     this.TransactionCreatorPublicKey = other.TransactionCreatorPublicKey;
 
     this.Nonce = other.Nonce;
-    this.Hash = other.Hash;
+    //this.Hash = other.Hash;
     this.DigitalSignature = other.DigitalSignature;
 
     this.state = other.state;
+    this.visited = other.visited;
 }
     
 }

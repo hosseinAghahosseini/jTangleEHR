@@ -67,7 +67,7 @@ public class Node {
     
     //Hash & Digital Signature
     public String Nonce;
-    public String Hash;
+    //public String Hash;
     public String DigitalSignature;
     
     //Checking Varriables
@@ -112,7 +112,7 @@ public class Node {
         this.TransactionCreatorPublicKey = other.TransactionCreatorPublicKey;
 
         this.Nonce = other.Nonce;
-        this.Hash = other.Hash;
+        //this.Hash = other.Hash;
         this.DigitalSignature = other.DigitalSignature;
 
         this.state = other.state;
@@ -158,7 +158,8 @@ public class Node {
         n.HospitalPreviousNodeId = HospitalPreviousNodeId;
         n.HospitalHashedPublicKey = HospitalHashedPublicKey;
         
-        n.NodeId = HashAndSign.applySha256(EHR + n.FirstAcceptedNodeId + n.SecondAcceptedNodeId); 
+        n.setNodeId();
+        //n.NodeId = HashAndSign.applySha256(n.EHR + n.FirstAcceptedNodeId + n.SecondAcceptedNodeId); 
         
         return n;
     }
@@ -316,12 +317,16 @@ public class Node {
         return genesis;
     }
     
+    public static boolean isGenesis(Node n)
+    {
+        return n.NodeId.equals("Genesis000");
+    }
     
     //Hashing   
     public static String createHashInput(Node N)
     {
         String output =  
-            N.NodeId + DELIMETER + 
+            //N.NodeId + DELIMETER + 
 
             N.FirstAcceptedNodeId + DELIMETER + 
             N.SecondAcceptedNodeId + DELIMETER + 
@@ -367,7 +372,8 @@ public class Node {
         System.out.println("Taraz ModifiedInput is: " + ModifiedInput);
         System.out.println("Taraz Hash is: " + hash);
         
-        this.Hash = hash;
+        //this.Hash = hash;
+        this.NodeId = hash;
         this.Nonce = Integer.toString(nonce);
         
         return hash;
@@ -386,7 +392,7 @@ public class Node {
         return null;
     }
         
-    public String setNodeId()
+    public String setNodeId() //todo add some random seed
     {
         this.NodeId = HashAndSign.applySha256(EHR + FirstAcceptedNodeId + SecondAcceptedNodeId); 
         return  this.NodeId;
@@ -410,7 +416,7 @@ public class Node {
                 +  "\",\"EHRAesKeyEncryptedByAssymeticKey\":\"" + EHRAesKeyEncryptedByAssymeticKey
                 +  "\",\"TransactionCreatorPublicKey\":\"" + TransactionCreatorPublicKey
                 +  "\",\"Nonce\":\"" + Nonce
-                +  "\",\"Hash\":\"" + Hash
+                //+  "\",\"Hash\":\"" + Hash
                 +  "\",\"DigitalSignature\":\"" + DigitalSignature
                 +  "\",\"OwnWeight\":\"" + OwnWeight
                 +  "\",\"CumulativeWeight\":\"" + CumulativeWeight;      
@@ -427,7 +433,7 @@ public class Node {
             + "\"EHR\":\"" + EHR + "\", "
             + "\"Encrypted\":" + IsEhrEncrypted + ", "
             + "\"CreatorPublicKey\":\"" + ShrinkString(TransactionCreatorPublicKey) + "\", "
-            + "\"Hash\":\"" + ShrinkString(Hash) + "\", "
+            //+ "\"Hash\":\"" + ShrinkString(Hash) + "\", "
             + "\"DigitalSign\":\"" + ShrinkString(DigitalSignature) + "\", "
             + "\"OwnWeight\":\"" + OwnWeight + "\", "
             + "\"CumulativeWeight\":\"" + CumulativeWeight + "\""
@@ -442,7 +448,7 @@ public class Node {
             + "\"EHR\":\"" + EHR + "\","
             + "\"IsEhrEncrypted\":" + IsEhrEncrypted + ","
             + "\"TransactionCreatorPublicKey\":\"" + TransactionCreatorPublicKey + "\","
-            + "\"Hash\":\"" + Hash + "\","
+            //+ "\"Hash\":\"" + Hash + "\","
             + "\"DigitalSignature\":\"" + DigitalSignature + "\""
             + "\"OwnWeight\":\"" + OwnWeight + "\","
             + "\"CumulativeWeight\":\"" + CumulativeWeight + "\""
@@ -530,12 +536,14 @@ public class Node {
         String calculatedHash = calculateHashWithNonce(hashInput, node1.Nonce);
         
         //Check if provided hash is valid (is equal to the calculated hash)
-        if(calculatedHash.equals(node1.Hash)) 
+        //if(calculatedHash.equals(node1.Hash)) 
+        if(calculatedHash.equals(node1.NodeId)) 
         {
             String target = HashAndSign.getDificultyString(difficulty); //Create a string with difficulty * "0" 
             
             //Chcek if the hash has enough leading zeros (validating proof of work)
-            if(node1.Hash.substring( 0, difficulty ).equals(target))
+            //if(node1.Hash.substring( 0, difficulty ).equals(target))
+            if(node1.NodeId.substring( 0, difficulty ).equals(target))
             {
                 return 1;
             }

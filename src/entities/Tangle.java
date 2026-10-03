@@ -40,7 +40,7 @@ public class Tangle {
         short AcceptCount = 0;
         for(int i = DAG.size() - 1; i >= 0 ; i--)
         {
-            if(DAG.get(i).NodeId == n.FirstAcceptedNodeId || DAG.get(i).NodeId == n.SecondAcceptedNodeId)
+            if(DAG.get(i).NodeId.equals(n.FirstAcceptedNodeId) || DAG.get(i).NodeId.equals(n.SecondAcceptedNodeId) )
             {
                 AcceptCount++;
             }
@@ -174,7 +174,8 @@ public class Tangle {
     
     public ArrayList<Node> selectTipNodes() //temporary to make app work
     {
-        return selectTipNodesMCMC();
+        //return selectTipNodesMCMC();
+        return selectTipNodesSimple();
     }
     
     public ArrayList<Node> selectTipNodesMCMC() //todo continue implementing tip selection algorithm
@@ -724,8 +725,8 @@ public class Tangle {
         return true;
     }
     
-    //to string
-    public static String DagToString(ArrayList<Node> dag, String PublicKey, boolean onlyMyNodes)
+    //get my nodes
+    public static ArrayList<Node> ExportTangle(ArrayList<Node> dag, String PublicKey, boolean onlyMyNodes)
     {
         ArrayList<Node> MyEhrNodes = new ArrayList<Node>();
         
@@ -747,10 +748,10 @@ public class Tangle {
             }
         }
         
-        return Node.toJsonArray(MyEhrNodes);
+        return MyEhrNodes;
     }
     
-    public static String DagToString(ArrayList<Node> dag, String PublicKey, boolean onlyMyNodes, int limit)
+    public static ArrayList<Node> ExportTangle(ArrayList<Node> dag, String PublicKey, boolean onlyMyNodes, int limit)
     {
         ArrayList<Node> MyEhrNodes = new ArrayList<>();
         
@@ -779,6 +780,17 @@ public class Tangle {
             }
         }
         
-        return Node.toJsonArray(MyEhrNodes);
+        return MyEhrNodes;
+    }
+    
+    //to string
+    public static String DagToString(ArrayList<Node> dag, String PublicKey, boolean onlyMyNodes)
+    {
+        return Node.toJsonArray(ExportTangle(dag, PublicKey, onlyMyNodes));
+    }
+    
+    public static String DagToString(ArrayList<Node> dag, String PublicKey, boolean onlyMyNodes, int limit)
+    {
+        return Node.toJsonArray(ExportTangle(dag, PublicKey, onlyMyNodes, limit));
     }
 }

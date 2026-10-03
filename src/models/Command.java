@@ -1,5 +1,6 @@
 package models;
 
+import UI.DAGViewer;
 import crypto.Cryptography;
 import entities.Node;
 import entities.Tangle;
@@ -705,6 +706,69 @@ public class Command {
                     }
                 }
             }
+            else if(commandStrOriginal.contains("visualizeTangle("))
+            {
+                commandStr = sanitize(commandStr, "visualizeTangle");
+                var parameters = commandStr.split(",");
+
+                var simpleUser = AppData.findUserFromList(parameters[0]);
+                if(simpleUser != null)
+                {
+                    var user = AppData.Users.get(simpleUser.userIndex);
+
+                    if(parameters.length == 1)
+                    {
+                        outputPrintLine("User [" + simpleUser.shortUserId +"]'s Tangle has " + user.MyTangle.DAG.size() + " nodes:");
+                        DAGViewer dv = new DAGViewer(Tangle.ExportTangle(user.MyTangle.DAG, user.HashedPublicKey, false));
+                        dv.visualize();
+                    }
+                    else if (parameters.length == 2)
+                    {
+                        outputPrintLine("User [" + simpleUser.shortUserId +"]'s Tangle has " + user.MyTangle.DAG.size() + " nodes:");
+
+                        DAGViewer dv;
+                        
+                        if(parameters[1].equalsIgnoreCase("true"))
+                            dv = new DAGViewer(Tangle.ExportTangle(user.MyTangle.DAG, user.HashedPublicKey, true));
+                        else
+                            dv = new DAGViewer(Tangle.ExportTangle(user.MyTangle.DAG, user.HashedPublicKey, false));
+                        
+                        dv.visualize();
+                        
+                    }
+                    else if(parameters.length == 3)
+                    {
+                        outputPrintLine("User [" + simpleUser.shortUserId +"]'s Tangle has " + user.MyTangle.DAG.size() + " nodes:");
+
+                        boolean onlyMyNodes = false;
+                        if(parameters[1].equalsIgnoreCase("true"))
+                            onlyMyNodes = true;
+                        int limit = -1;
+                        try{
+                            limit = Integer.parseInt(parameters[2]);
+                        }
+                        catch(Exception ee)
+                        {
+                            outputPrintLine("Warning: Limit was not a number at ShowTangle(). MaximumValue is Used.");
+                        }
+                        if(limit <= 0)
+                        {
+                            DAGViewer dv = new DAGViewer(Tangle.ExportTangle(user.MyTangle.DAG, user.HashedPublicKey, onlyMyNodes));
+                            dv.visualize();
+                        }                          
+                        else
+                        {
+                            DAGViewer dv = new DAGViewer(Tangle.ExportTangle(user.MyTangle.DAG, user.HashedPublicKey, onlyMyNodes, limit));
+                            dv.visualize();
+                        }
+                            
+                    }
+                    else
+                    {
+                        outputPrintLine("Error happened at printTangle(). Paramenter counts Mismatch.");
+                    }
+                }
+            }
             else if(commandStrOriginal.contains("advertiseTangle("))
             {
                 commandStr = Command.sanitize(commandStr, "advertiseTangle");
@@ -716,10 +780,11 @@ public class Command {
                     {
                         for(var receiver : AppData.Users)
                         {
-                            receiver.receiveTangleAndUpdateSelf(sender.advertiseTangle());
+                            if(!sender.shortUserId.equals(receiver.shortUserId))
+                                receiver.receiveTangleAndUpdateSelf(sender.advertiseTangle());
                         }
                     }
-                    outputPrintLine("Tangle advertisment (from evryone to all) was completed successfully.");
+                    outputPrintLine("Tangle advertisment (from everyone to all) was completed successfully.");
                     return;
                 }
                 
