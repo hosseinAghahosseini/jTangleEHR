@@ -319,7 +319,10 @@ public class Node {
     
     public static boolean isGenesis(Node n)
     {
-        return n.NodeId.equals("Genesis000");
+        Node genesis = readNodeFromFile("genesis.ehr");
+        return n.NodeId.equals(genesis.NodeId);
+        
+        //return n.NodeId.equals("Genesis000");
     }
     
     //Hashing   
@@ -459,8 +462,8 @@ public class Node {
     {
         if(s == null) return null;
         if(s.isBlank()) return s;
-        if(s.length() <= 3) return s;
-        return s.substring(0, 3) + "...";
+        if(s.length() <= 4) return s;
+        return s.substring(0, 4) + "...";
     }
 
     // Converts ArrayList<Node> to JSON array
@@ -491,7 +494,7 @@ public class Node {
         return false;
     }
     
-    public Node readNodeFromFile(String address)
+    public static Node readNodeFromFile(String address)
     {
         try (BufferedReader reader = Files.newBufferedReader(Paths.get(address))) 
         {

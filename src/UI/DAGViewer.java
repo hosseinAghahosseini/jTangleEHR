@@ -1,9 +1,14 @@
 package UI;
 
 import entities.Node;
+import static entities.Node.readNodeFromFile;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
@@ -25,6 +30,9 @@ import org.jgrapht.graph.DefaultEdge;
 public class DAGViewer {
        
     Graph<String, DefaultEdge> graph;
+    Map<String, String> weightMap;
+    
+    public static int NodeIdSize = 6;
     
     public DAGViewer()
     {
@@ -34,21 +42,40 @@ public class DAGViewer {
     public DAGViewer(ArrayList<Node> dag)
     {
         graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+        weightMap = new HashMap<>();
         
         for(var node : dag)
         {
             graph.addVertex(node.NodeId);
+            weightMap.put(node.NodeId, String.valueOf(node.CumulativeWeight));
         }
+        
+        Node genesis = readNodeFromFile("genesis.ehr");
         
         for(var node : dag)
         {
-            if(!Node.isGenesis(node))
+            if(!node.NodeId.equals(genesis.NodeId))
             {
-                graph.addEdge(node.NodeId, node.FirstAcceptedNodeId);
-                if(!node.SecondAcceptedNodeId.equals(node.FirstAcceptedNodeId))
-                    graph.addEdge(node.NodeId, node.SecondAcceptedNodeId);
+                graph.addEdge
+                   (node.NodeId,
+                    node.FirstAcceptedNodeId);
+                
+                if(!node.SecondAcceptedNodeId
+                    .equals(node.FirstAcceptedNodeId))
+                {    
+                    graph.addEdge(node.NodeId,
+                        node.SecondAcceptedNodeId);
+                }
             }
         }
+        
+        System.out.println("edges:");
+        Set<DefaultEdge> edges = graph.edgeSet();
+        for(var edge : edges)
+        {
+            System.out.println(edge.toString());
+        }
+        
     }
 
     public void visualize() {
@@ -71,15 +98,16 @@ public class DAGViewer {
                                 .layoutAlgorithm(layoutAlgorithm)
                                 .build();
                 
+                
                 vv.getRenderContext().setVertexLabelFunction(
-                    v -> v
+                    v -> v.substring(0, NodeIdSize) + " (" + weightMap.get(v) + ")"
                 );
                 
                 vv.setDoubleBuffered(true);
                 
                 // 6. Create the window
                 JFrame frame = new JFrame("DAG Visualization");
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 frame.setLayout(new BorderLayout());
                 frame.add((Component) vv, BorderLayout.CENTER);
                 frame.setSize(1920, 1080);

@@ -34,13 +34,15 @@ public class AppData {
     
     public static boolean doesUserExist(String UserId)
     {
-        for(int i = Users.size() - 1; i >= 0; i-- )
-        {
-            if(Users.get(i).HashedPublicKey.equals(UserId) || Users.get(i).shortUserId.equals(UserId) )
+        if(!Users.isEmpty()) 
+            for(int i = Users.size() - 1; i >= 0; i-- )
             {
-                return true;
+                System.out.println("i:" + i + " - " + Users.get(i).HashedPublicKey);
+                if(Users.get(i).HashedPublicKey.equals(UserId) || Users.get(i).shortUserId.equals(UserId) )
+                {
+                    return true;
+                }
             }
-        }
         
         return false;
     }
