@@ -26,7 +26,6 @@ import javax.crypto.Cipher;
  * @author hosseinAghahosseini
  */
 
-
 public class AsymmetricEncryption {
     
     private PrivateKey privateKey;
@@ -46,10 +45,7 @@ public class AsymmetricEncryption {
             System.out.println("Private key: " + privateKey);
             System.out.println("Public key: " + publicKey);
         }
-        catch (NoSuchAlgorithmException e)
-        {
-            
-        } 
+        catch (NoSuchAlgorithmException e) { } 
     }
     
     public void writeKeyPairToFile(String Address, String FileName)

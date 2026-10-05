@@ -305,7 +305,9 @@ public class User {
                 }
                 else //to check if the two accepted nodes are in the tangle for dfs
                 {
-                    NewlyAddedNodes.add(recievedTangle.DAG.get(i));
+                    //create a new Node so we don't mix up tangles of different users because of call by reference
+                    Node newNode = new Node(recievedTangle.DAG.get(i));
+                    NewlyAddedNodes.add(newNode);
                 }              
             }
         }

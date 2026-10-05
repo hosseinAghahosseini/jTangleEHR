@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import models.NodePair;
 import models.NodeWeight;
-import models.SortedUniqueArrayList;
 
 /**
  * @author hosseinAghahosseini
@@ -22,7 +21,7 @@ public class Tangle {
      *  if alpha is set to 0, candidate nodes have the same chance regardless of their weight
      *  the bigger the alpha, the more biased the algorithm is for heavier nodes
     */
-    public static final double alpha = 0.4;   
+    public static final double alpha = 0.2;   
     /**
      *  beta is another factor that penalizes following the same path in MCMC random walk
      *  if set to 1, there is no penalty

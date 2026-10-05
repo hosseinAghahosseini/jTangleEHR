@@ -18,6 +18,7 @@ import models.AppData;
  * @author hosseinAghahosseini
  * Test Case
  * TDD
+ * When advertising tangle nodes are passed by refernce which results in summed up cumulative weights
  */
 
 public class Command {
