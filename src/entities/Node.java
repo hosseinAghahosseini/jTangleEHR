@@ -37,25 +37,25 @@ public class Node {
     //Weight
     public int OwnWeight;
     public int CumulativeWeight;
-    public int Score;
+    public int Milestone = 0;
     
     //Nodes to Accept
-    public Node FirstAcceptedNode;
+    //public Node FirstAcceptedNode;
     public String FirstAcceptedNodeId = "#";
     
-    public Node SecondAcceptedNode;
+    //public Node SecondAcceptedNode;
     public String SecondAcceptedNodeId = "#";
     
     //My previous Nodes to reffer
-    public Node PatientPreviousNode;
+    //public Node PatientPreviousNode;
     public String PatientPreviousNodeId = "#";
     public String PatientHashedPublicKey = "#";
     
-    public Node DoctorPreviousNode;
+    //public Node DoctorPreviousNode;
     public String DoctorPreviousNodeId = "#";
     public String DoctorHashedPublicKey = "#";
     
-    public Node HospitalPreviousNode;
+    //public Node HospitalPreviousNode;
     public String HospitalPreviousNodeId = "#";
     public String HospitalHashedPublicKey = "#";
     
@@ -86,22 +86,22 @@ public class Node {
 
         this.OwnWeight = other.OwnWeight;
         this.CumulativeWeight = other.CumulativeWeight;
-        this.Score = other.Score;
+        this.Milestone = other.Milestone;
 
-        this.FirstAcceptedNode = other.FirstAcceptedNode;
+        //this.FirstAcceptedNode = other.FirstAcceptedNode;
         this.FirstAcceptedNodeId = other.FirstAcceptedNodeId;
-        this.SecondAcceptedNode = other.SecondAcceptedNode;
+        //this.SecondAcceptedNode = other.SecondAcceptedNode;
         this.SecondAcceptedNodeId = other.SecondAcceptedNodeId;
 
-        this.PatientPreviousNode = other.PatientPreviousNode;
+        //this.PatientPreviousNode = other.PatientPreviousNode;
         this.PatientPreviousNodeId = other.PatientPreviousNodeId;
         this.PatientHashedPublicKey = other.PatientHashedPublicKey;
 
-        this.DoctorPreviousNode = other.DoctorPreviousNode;
+        //this.DoctorPreviousNode = other.DoctorPreviousNode;
         this.DoctorPreviousNodeId = other.DoctorPreviousNodeId;
         this.DoctorHashedPublicKey = other.DoctorHashedPublicKey;
 
-        this.HospitalPreviousNode = other.HospitalPreviousNode;
+        //this.HospitalPreviousNode = other.HospitalPreviousNode;
         this.HospitalPreviousNodeId = other.HospitalPreviousNodeId;
         this.HospitalHashedPublicKey = other.HospitalHashedPublicKey;
 
@@ -158,8 +158,10 @@ public class Node {
         n.HospitalPreviousNodeId = HospitalPreviousNodeId;
         n.HospitalHashedPublicKey = HospitalHashedPublicKey;
         
-        n.setNodeId();
+        //n.setNodeId();
         //n.NodeId = HashAndSign.applySha256(n.EHR + n.FirstAcceptedNodeId + n.SecondAcceptedNodeId); 
+        String hashInput = createHashInput(n);  
+        n.NodeId= n.calculateHashAndSetNonce(hashInput);
         
         return n;
     }
@@ -247,7 +249,7 @@ public class Node {
         genesis.DoctorHashedPublicKey = "0";
         genesis.HospitalHashedPublicKey = "0";
         
-        genesis.EHR = "FirstInsertedEhrAsGenesisNode";
+        genesis.EHR = "GENESIS";
         genesis.IsEhrEncrypted = false;
         genesis.EHRAesKeyEncryptedByAssymeticKey = "#";
         //genesis.TransactionCreatorPublicKey = "#";
@@ -395,11 +397,11 @@ public class Node {
         return null;
     }
         
-    public String setNodeId() //todo add some random seed
-    {
-        this.NodeId = HashAndSign.applySha256(EHR + FirstAcceptedNodeId + SecondAcceptedNodeId); 
-        return  this.NodeId;
-    }
+//    public String setNodeId() //todo add some random seed
+//    {
+//        this.NodeId = HashAndSign.applySha256(EHR + FirstAcceptedNodeId + SecondAcceptedNodeId); 
+//        return  this.NodeId;
+//    }
 
     
     //Read & Write    
@@ -534,9 +536,15 @@ public class Node {
     }
     
     public static int validateNodeHash(Node node1)
-    {
+    {     
         String hashInput = createHashInput(node1);
         String calculatedHash = calculateHashWithNonce(hashInput, node1.Nonce);
+        
+        if(calculatedHash == null)
+        {
+            System.out.println("calculatedHash is null");
+            return -3;
+        }
         
         //Check if provided hash is valid (is equal to the calculated hash)
         //if(calculatedHash.equals(node1.Hash)) 
@@ -559,5 +567,41 @@ public class Node {
         {
             return -2;
         }
+    }
+    
+    
+    //memory management
+    public void freeMemory() //remove a node from out lite client tangle
+    {
+        if(this.OwnWeight == 0) return; //already freed
+        
+        //this.NodeId = null;
+
+        this.OwnWeight = 0;
+        this.CumulativeWeight = 0;
+        //this.Milestone++;
+
+        //this.FirstAcceptedNodeId = null;
+        //this.SecondAcceptedNodeId = null;
+
+        this.PatientPreviousNodeId = null;
+        this.PatientHashedPublicKey = null;
+
+        this.DoctorPreviousNodeId = null;
+        this.DoctorHashedPublicKey = null;
+
+        this.HospitalPreviousNodeId = null;
+        this.HospitalHashedPublicKey = null;
+
+        this.EHR = null;
+        //this.IsEhrEncrypted = other.IsEhrEncrypted;
+        this.EHRAesKeyEncryptedByAssymeticKey = null;
+        this.TransactionCreatorPublicKey = null;
+
+        this.Nonce = null;
+        this.DigitalSignature = null;
+
+        //this.state = 0;
+        //this.visited = 0;
     }
 }

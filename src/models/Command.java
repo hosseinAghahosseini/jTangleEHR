@@ -5,7 +5,6 @@ import crypto.Cryptography;
 import entities.Node;
 import entities.Tangle;
 import entities.User;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
@@ -925,6 +924,38 @@ public class Command {
                     outputPrintLine("Error happened at initializeTangle(). 4 Paramentes should be provided.");
                 }
             }
+            else if(commandStrOriginal.contains("setMilestone("))
+            {
+                commandStr = Command.sanitize(commandStr, "setMilestone");
+                var parameters = commandStr.split(",");
+                
+                if(parameters.length == 0 || commandStr.isBlank()) //everyone sets milestone
+                {
+                    for(var user : AppData.Users)
+                    {
+                        user.milestoneInitiation();
+                    }
+                    outputPrintLine("Milestone Initiation (for all) was completed successfully.");
+                    return;
+                }
+                
+                int userId = findUserSearchIndexByUserIdString(parameters[0]);
+                if(userId < 0)
+                {
+                    outputPrintLine("Error happened at setMilestone(). User was not found.");
+                    return;
+                }
+                var user = AppData.Users.get(userId);
+
+                if(parameters.length == 1) //one user will do milestone initiation
+                {
+                    user.milestoneInitiation();
+                    
+                    outputPrintLine("Milestone Initiation was completed successfully by User ["+ parameters[0] + "].");
+                }
+                
+                System.gc();
+            }
             else if(commandStrOriginal.contains("listUser("))
             {
                 commandStr = Command.sanitize(commandStr, "listUser");
@@ -1089,6 +1120,13 @@ public class Command {
                 Output += "]";
                 outputPrintLine(Output);
             }
+        
+            if(this.Limit <= 0)
+            {
+                this.cancel();
+                return;
+            }
+        
         }
     }   
 }

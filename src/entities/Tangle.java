@@ -5,15 +5,16 @@ import java.security.SecureRandom;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ThreadLocalRandom;
 import models.NodePair;
 import models.NodeWeight;
 
 /**
  * @author hosseinAghahosseini
  */
-
 public class Tangle {
     
     /**
@@ -21,19 +22,22 @@ public class Tangle {
      *  if alpha is set to 0, candidate nodes have the same chance regardless of their weight
      *  the bigger the alpha, the more biased the algorithm is for heavier nodes
     */
-    public static final double alpha = 0.2;   
+    public static final double alpha = 0.4;   
     /**
      *  beta is another factor that penalizes following the same path in MCMC random walk
      *  if set to 1, there is no penalty
      *  the smaller the beta, the more diverse the path
     */
-    public static final double beta = 0.7;
+    public static final double beta = 0.6;
     
-    SecureRandom srandom = new SecureRandom();
+    public static final int MAX_RETRY_FIND_SAME_TIP_NODE = 4;
+    
+    //final SecureRandom srandom = new SecureRandom();
+    final Random srandom = new Random();
     
     public ArrayList<Node> DAG;
     
-    public boolean addNode(Node n)
+    public int addNode(Node n)
     {
         //check if accepted nodes are valid
         short AcceptCount = 0;
@@ -49,15 +53,16 @@ public class Tangle {
         if(AcceptCount >= 2)
         {
             DAG.add(n);
-            return true;
+            return 2;
         }
-        if(AcceptCount == 1 && DAG.size() == 1)
+        //if(AcceptCount == 1 && DAG.size() == 1)
+        if(AcceptCount == 1)
         {
             DAG.add(n);
-            return true;
+            return 1;
         }
         
-        return false;
+        return 0;
     }
     
     public boolean addNodeWithoutChecking(Node n) //todo
@@ -171,26 +176,28 @@ public class Tangle {
         return Tips;
     }
     
-    public ArrayList<Node> selectTipNodes() //temporary to make app work
+    public ArrayList<Node> selectTipNodes()
     {
-        //return selectTipNodesMCMC();
-        return selectTipNodesSimple();
+        //if(DAG == null || DAG.isEmpty() || DAG.size() < 6)
+            //return selectTipNodesSimple();
+        
+        //start at a milestone node (or genesis at start)
+        Node milestone = GetMilestoneNode();
+        return selectTipNodesMCMC(milestone, 2);
     }
     
-    public ArrayList<Node> selectTipNodesMCMC() //todo continue implementing tip selection algorithm
+    public ArrayList<Node> selectTipNodesMCMC(Node StartingNode, int TipCount) //todo todo check
     {
-        if(DAG == null || DAG.isEmpty() || DAG.size() < 7)
-            return selectTipNodesSimple();
-        
         ArrayList<Node> Tips = new ArrayList<>();
         Set<String> Path = new TreeSet<>();
-        //SortedUniqueArrayList Path = new SortedUniqueArrayList();
 
-        //start at a milestone node (or genesis at start)
-        Node currentNode = GetMilestoneNode(); //genesis
+        //starting node is a milestone in tipselection (but is a user node in other cases)
+        Node currentNode = StartingNode;
         if(currentNode == null) return null;
         
-        while(Tips.size() < 2)
+        int countFoundSameTip = 0;
+        
+        while(Tips.size() < TipCount)
         {
             //monte carlo markov chain random walk (walk through the edge nodes with weigh bias)
             var canditateNextDestinationNodes = findNodesThatAcceptsAnother(currentNode.NodeId);
@@ -202,19 +209,35 @@ public class Tangle {
                 {
                     if(tip.NodeId.equals(currentNode.NodeId))
                     {
-                        foundTheSameTip = true;
+                        foundTheSameTip = true; //todo change it for cases when exactly one tip exists
+                        countFoundSameTip++;
                         break;
                     }
                 }
-                if(!foundTheSameTip) Tips.add(new Node(currentNode));
-                currentNode = GetMilestoneNode();
+                if(!foundTheSameTip)
+                    Tips.add(new Node(currentNode));
+                else
+                    if(countFoundSameTip > MAX_RETRY_FIND_SAME_TIP_NODE)
+                    {
+                        Tips.add(new Node(currentNode)); //make 2 edges back
+                        //break; //make only 1 edge back
+                    }
+                
+                //currentNode = GetMilestoneNode();
+                currentNode = StartingNode;
                 continue;
             }
 
             //choosing the next node according to cumulative weight
 
             double sum = 0;
-            int size = canditateNextDestinationNodes.size();
+            int size = canditateNextDestinationNodes.size();           
+            if(size == 1) //only one path is availabe
+            {
+                currentNode = canditateNextDestinationNodes.get(0); //next node is found
+                Path.add(currentNode.NodeId);
+                continue;
+            }           
             double[] probabilityList = new double[size];
 
             // (e ^ a.w) / Sum (e ^ a.w) for all nodes
@@ -233,12 +256,12 @@ public class Tangle {
                 probabilityList[i] = temp;
                 sum += temp;
             }
-
-            double randomResult = srandom.nextDouble();
+            
+            System.out.println(srandom.getClass().getName());
+            double randomResult = srandom.nextDouble() * sum;
             double sumOfProb = 0;
             for(int i = 0; i < size; i++)
             {
-                probabilityList[i] = probabilityList[i] / sum;
                 sumOfProb += probabilityList[i];
                 if(randomResult <= sumOfProb)
                 {
@@ -252,11 +275,31 @@ public class Tangle {
         return Tips;
     }
     
-    public Node GetMilestoneNode()
+    public Node GetMilestoneNode() //todo check
     {
         if(!DAG.isEmpty())
         {
-            return DAG.get(0);
+            if(DAG.size() < 10) return DAG.get(0);
+            
+            ArrayList<Node> milestoneNodes = new ArrayList<>();
+            milestoneNodes.add(DAG.get(0)); //genesis
+            int maxMilestone = 0;
+            
+            for(int i = DAG.size() - 1; i > 0; i--)
+            {
+                if(DAG.get(i).Milestone > 0 && DAG.get(i).Milestone >= maxMilestone)
+                {
+                    if(DAG.get(i).Milestone > maxMilestone)
+                    {
+                        milestoneNodes.clear();
+                        maxMilestone = DAG.get(i).Milestone;
+                    }
+                    milestoneNodes.add(DAG.get(i));
+                }
+            }
+            
+            Random r = new Random();
+            return milestoneNodes.get(r.nextInt(milestoneNodes.size()));
         }      
         return null;
     }
@@ -438,7 +481,7 @@ public class Tangle {
                 
         for (Node updatingNode : NewNodes) 
         {                    
-            for (Node checkingNode : NewNodes) 
+            for (Node checkingNode : NewNodes) //todo use iterator loop : https://stackoverflow.com/questions/8104692/how-to-avoid-java-util-concurrentmodificationexception-when-iterating-through-an
             {
                 for (Node cleaningNode : NewNodes) //clean visit states
                 {

@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package crypto;
 
 import entities.Node;
@@ -17,6 +13,7 @@ import java.util.logging.Logger;
 
 public class Cryptography {
    
+    static SecureRandom srandom = new SecureRandom();
         
     public static String createHashInput(Node N)
     {
@@ -73,9 +70,9 @@ public class Cryptography {
         int leftLimit = 48; // numeral '0'
         int rightLimit = 122; // letter 'z'
         
-        SecureRandom random = new SecureRandom();
+        //SecureRandom random = new SecureRandom(); //maybe deadlock
 
-        String generatedString = random.ints(leftLimit, rightLimit + 1)
+        String generatedString = srandom.ints(leftLimit, rightLimit + 1)
           .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97))
           .limit(targetStringLength)
           .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)

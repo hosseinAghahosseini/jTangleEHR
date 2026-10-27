@@ -15,7 +15,9 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 import java.util.Stack;
+import java.util.TreeSet;
 
 /**
  * @author hosseinAghahosseini
@@ -40,7 +42,9 @@ public class User {
         }
     }
     
+    static final int MILESTONE_NODES_NEEDED = 10;
     static final String AES_KEY_DELIMETER = ",";
+    final SecureRandom srandom = new SecureRandom();
     
     //Personal Data
     public String HashedPublicKey; //aka address
@@ -53,13 +57,19 @@ public class User {
     private String Address;
     private Date BirthDate;
     
+    private boolean isLiteClient = false;
+    
     //Tangle Data
     public Tangle MyTangle;
     public String MyPreviousNodeId = "#";
     
+    //Milestone
+    public int Milestone;
+    
     public User(UserRole userRole)
     {
         this.Role = userRole;
+        if(userRole != UserRole.Hospital) isLiteClient = true;
         RsaKeys = new AsymmetricEncryption();
         RsaKeys.generateKeyPair();
         HashedPublicKey = HashAndSign.applySha256(RsaKeys.GetPublicKeyInBase64String());
@@ -98,10 +108,10 @@ public class User {
         else //encrypting ehr
         {
             //generate ehr key and ehr salt
-            SecureRandom r = new SecureRandom();
-            
-            String Key = HashAndSign.applySha256(EHR + String.valueOf(r.nextInt()));
-            String Salt = HashAndSign.applySha256(String.valueOf(r.nextInt()));
+            //SecureRandom r = new SecureRandom(); //may cause deadlock
+
+            String Key = HashAndSign.applySha256(EHR + String.valueOf(srandom.nextInt()));
+            String Salt = HashAndSign.applySha256(String.valueOf(srandom.nextInt()));
             
             try
             {
@@ -115,7 +125,6 @@ public class User {
                 return null;
             }             
         }
-
         
         //tip selection
         ArrayList<Node> SelectedTips = MyTangle.selectTipNodes();
@@ -145,7 +154,7 @@ public class User {
         
         
         //Create and Set NodeId
-        n.setNodeId();
+        //n.setNodeId();
         
         //Create Hash
         String hashInput = n.createHashInput(n);  
@@ -158,11 +167,15 @@ public class User {
         n.writeNodeToFile(n, hash + ".ehr");
         Node gen2 = n.readNodeFromFile(hash + ".ehr");
 
-        boolean res = MyTangle.addNode(n); 
+        int res = MyTangle.addNode(n); 
         
-        if(res)
+        if(res > 0)
         {
             this.MyPreviousNodeId = n.NodeId;
+        }
+        else
+        {
+            System.out.println("Tarab Node: " + n.NodeId + " from user: " + this.HashedPublicKey.substring(0,12));
         }
         
         return n.NodeId;
@@ -191,7 +204,7 @@ public class User {
     
     public ArrayList<Node> getMyNodesFromTangle()
     {
-        ArrayList<Node> MyEhrNodes = new ArrayList<Node>();
+        ArrayList<Node> MyEhrNodes = new ArrayList<>();
         
         //Normal Search
         for(int i = 0; i < MyTangle.DAG.size(); i++)
@@ -202,7 +215,7 @@ public class User {
             
             if(this.Role == UserRole.Doctor)
             {
-                ToCheckKey = currentNode.PatientHashedPublicKey;
+                ToCheckKey = currentNode.DoctorHashedPublicKey;
             }
             else if(this.Role == UserRole.Hospital)
             {
@@ -266,10 +279,10 @@ public class User {
     }
     
     
-    //Tangle Network Functions
-    
+    //Tangle Network Functions  
     public Tangle advertiseTangle()
     {
+        
         return MyTangle;
     }
     
@@ -325,7 +338,8 @@ public class User {
         }
         
         //update cumulative weights
-        this.calculateCumulativeWeightsAfterAddingAGraph(NewlyAddedNodes);
+        //todo debug
+        //this.calculateCumulativeWeightsAfterAddingAGraph(NewlyAddedNodes);
         
         //The received tangle is valid, so we update our tangle according to it
         for(int i = 0 ; i < NewlyAddedNodes.size(); i++)
@@ -335,16 +349,16 @@ public class User {
         }
         
         //This works but has overhead (It completely recalculates the cumulative weights of the dag)
-        //for(var node : MyTangle.DAG)
-        //{
-        //    node.CumulativeWeight = 1;
-        //}
-        //MyTangle.DAG = Tangle.recalculateCumulativeWeights(MyTangle.DAG);
+        for(var node : MyTangle.DAG)
+        {
+            node.CumulativeWeight = 1;
+        }
+        MyTangle.DAG = Tangle.recalculateCumulativeWeights(MyTangle.DAG);
 
         return true;
     }
 
-    
+    //cumulative weight
     public boolean calculateCumulativeWeightsAfterAddingANode(String NodeId)
     {
         try
@@ -372,5 +386,64 @@ public class User {
         }
 
         return false;
+    }
+    
+    //milestone
+    public boolean milestoneInitiation()
+    {
+        Milestone++;
+        int milestoneCount = 0;
+        
+        if(this.isLiteClient)
+        {
+            Set<String> MilestoneNodes = new TreeSet<>();
+            for(int i = 0; i < MyTangle.DAG.size(); i++)
+            {
+                Node currentNode = MyTangle.DAG.get(i);                    
+
+                String ToCheckKey = currentNode.PatientHashedPublicKey;       
+                if(this.Role == UserRole.Doctor) ToCheckKey = currentNode.DoctorHashedPublicKey;
+                else if(this.Role == UserRole.Hospital) ToCheckKey = currentNode.HospitalHashedPublicKey;
+
+                if(ToCheckKey == null) continue; //already cleared in a milestone
+                
+                if(ToCheckKey.equals(HashedPublicKey)) //myNode
+                {
+                    MilestoneNodes.add(currentNode.NodeId); //keep our nodes
+
+                    if(milestoneCount < MILESTONE_NODES_NEEDED)
+                    {
+                        //move forward to edges and save the edge nodes as milestone
+                        var milestoneEdge = this.MyTangle.selectTipNodesMCMC(currentNode, 1).get(0);
+                        milestoneEdge.Milestone = this.Milestone;
+
+                        MilestoneNodes.add(milestoneEdge.NodeId); //keep some edge nodes
+                        milestoneCount++;
+                    }
+                    
+                    
+                }
+            }  
+            
+            //free memory of the nodes that are not in the path
+            for(var Node : MyTangle.DAG)
+            {
+                if(!MilestoneNodes.contains(Node.NodeId))
+                {
+                    Node.freeMemory();
+                }
+            }
+        }
+        else
+        {
+            var previousMilestone = this.MyTangle.GetMilestoneNode();
+            var edgeNodesToBecomeMilestone = this.MyTangle.selectTipNodesMCMC(previousMilestone, MILESTONE_NODES_NEEDED);
+            for(var mnode : edgeNodesToBecomeMilestone)
+            {
+                mnode.Milestone = this.Milestone;
+            }
+        }
+        
+        return true;
     }
 }

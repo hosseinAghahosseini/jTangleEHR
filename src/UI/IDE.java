@@ -646,29 +646,7 @@ public class IDE extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem20ActionPerformed
 
     private void jMenuItem21ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem21ActionPerformed
-        SortedUniqueArrayList list = new SortedUniqueArrayList();
-        list.add("123");
-        list.add("456");
-        list.add("124");
-        list.add("121");
-        list.add("123");
-        list.add("127");
-        list.add("678");
-        //list.remove("124");
-        //list.removeAt(3);
-        outputPrintLine(String.valueOf(list.exists("120")));
-        outputPrintLine(String.valueOf(list.exists("121")));
-        outputPrintLine(String.valueOf(list.exists("123")));
-        outputPrintLine(String.valueOf(list.exists("124")));
-        outputPrintLine(String.valueOf(list.exists("125")));
-        outputPrintLine(String.valueOf(list.exists("677")));
-        outputPrintLine(String.valueOf(list.exists("678")));
-        outputPrintLine(String.valueOf(list.exists("679")));
-        
-        for(var lis : list.getList())
-        {
-            outputPrintLine(lis);
-        }
+        inputPrint("//Initiates a new milestote (It will also free memory of lite clients);\n//If no parameters are provided, every user will initiate;\nsetMilestone(\"user\");\n");
     }//GEN-LAST:event_jMenuItem21ActionPerformed
 
     private void jMenuItem22ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem22ActionPerformed

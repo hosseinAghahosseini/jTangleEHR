@@ -4,6 +4,7 @@
  */
 package models;
 
+import entities.LiteNode;
 import entities.Node;
 
 /**

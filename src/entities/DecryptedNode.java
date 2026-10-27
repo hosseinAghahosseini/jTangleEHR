@@ -22,22 +22,22 @@ public class DecryptedNode extends Node {
 
     this.OwnWeight = other.OwnWeight;
     this.CumulativeWeight = other.CumulativeWeight;
-    this.Score = other.Score;
+    this.Milestone = other.Milestone;
 
-    this.FirstAcceptedNode = other.FirstAcceptedNode;
+    //this.FirstAcceptedNode = other.FirstAcceptedNode;
     this.FirstAcceptedNodeId = other.FirstAcceptedNodeId;
-    this.SecondAcceptedNode = other.SecondAcceptedNode;
+    //this.SecondAcceptedNode = other.SecondAcceptedNode;
     this.SecondAcceptedNodeId = other.SecondAcceptedNodeId;
 
-    this.PatientPreviousNode = other.PatientPreviousNode;
+    //this.PatientPreviousNode = other.PatientPreviousNode;
     this.PatientPreviousNodeId = other.PatientPreviousNodeId;
     this.PatientHashedPublicKey = other.PatientHashedPublicKey;
 
-    this.DoctorPreviousNode = other.DoctorPreviousNode;
+    //this.DoctorPreviousNode = other.DoctorPreviousNode;
     this.DoctorPreviousNodeId = other.DoctorPreviousNodeId;
     this.DoctorHashedPublicKey = other.DoctorHashedPublicKey;
 
-    this.HospitalPreviousNode = other.HospitalPreviousNode;
+    //this.HospitalPreviousNode = other.HospitalPreviousNode;
     this.HospitalPreviousNodeId = other.HospitalPreviousNodeId;
     this.HospitalHashedPublicKey = other.HospitalHashedPublicKey;
 
